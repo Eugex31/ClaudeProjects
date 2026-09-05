@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    name: Lint, typecheck, unit, e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
+        ports:
+          # Host 5433 : container 5432. The e2e harness (playwright.config.ts) and
+          # scripts/ensure-test-db.mjs both hard-code localhost:5433 to match the
+          # local embedded-postgres cluster; mapping the CI service to the same
+          # port means neither file needs a CI-only branch for its connection URL.
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # Every step connects as the non-superuser role created below, never as the
+      # image's superuser. This is load-bearing: a Postgres superuser bypasses
+      # FORCE ROW LEVEL SECURITY, so the RLS and tenant-isolation suites would
+      # pass without exercising anything if the app connected as one.
+      DATABASE_URL: postgresql://lynesign_app:lynesign@localhost:5433/lynesign?schema=public
+      # Throwaway CI literals, not real secrets. AUTH_SECRET signs nothing that
+      # outlives the job; APP_ENCRYPTION_KEY is only an HMAC key for the pairing
+      # tests, which need it to be present and non-empty.
+      AUTH_SECRET: ci-not-a-real-secret-0000000000000000000000000
+      AUTH_URL: http://localhost:3100
+      APP_ENCRYPTION_KEY: ci-not-a-real-encryption-key-0000000000000000
+      NEXT_TELEMETRY_DISABLED: "1"
+      # S3-compatible object storage for the Media subsystem. These point at the
+      # local MinIO the "Start MinIO" step brings up; the values match the
+      # hardcoded constants in scripts/dev-storage.mjs so the app under test, the
+      # Vitest integration suite, and MinIO itself all agree. STORAGE_PUBLIC_URL
+      # is the deferred CDN hook and is intentionally empty.
+      STORAGE_ENDPOINT: http://localhost:9000
+      STORAGE_REGION: us-east-1
+      STORAGE_BUCKET: lynesign-media
+      STORAGE_ACCESS_KEY_ID: lynesign
+      STORAGE_SECRET_ACCESS_KEY: lynesign-dev-secret
+      STORAGE_PUBLIC_URL: ""
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Provision non-superuser role and databases
+        # The postgres image's POSTGRES_USER is a superuser and superusers bypass
+        # row-level security. Create a LOGIN NOSUPERUSER role (CREATEDB is needed
+        # for Prisma's shadow database and for scripts/ensure-test-db.mjs) and
+        # hand it both databases plus ownership of the public schema, which
+        # Postgres 15+ no longer grants to non-owners by default.
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -p 5433 -U postgres -d postgres -v ON_ERROR_STOP=1 <<'SQL'
+          CREATE ROLE lynesign_app LOGIN NOSUPERUSER CREATEDB PASSWORD 'lynesign';
+          CREATE DATABASE lynesign OWNER lynesign_app;
+          CREATE DATABASE lynesign_test OWNER lynesign_app;
+          SQL
+          for db in lynesign lynesign_test; do
+            psql -h localhost -p 5433 -U postgres -d "$db" -v ON_ERROR_STOP=1 <<'SQL'
+          GRANT ALL ON SCHEMA public TO lynesign_app;
+          ALTER SCHEMA public OWNER TO lynesign_app;
+          SQL
+          done
+
+      - name: Apply migrations
+        run: npx prisma migrate deploy
+
+      - name: Seed reference data
+        run: npm run db:seed
+
+      - name: Start MinIO
+        # Reuses scripts/dev-storage.mjs (via npm run storage:up): it downloads
+        # the MinIO server binary on first run, launches it detached on :9000,
+        # health-checks it, and ensures the lynesign-media bucket. CI has no
+        # long-lived service for object storage, so this mirrors the
+        # embedded-postgres pattern of fetching the binary at job time. Placed
+        # before Lint so MinIO is up for the unit/integration suite and stays up
+        # through the e2e run.
+        run: npm run storage:up
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit and integration tests
+        run: npm run test
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end tests
+        # pretest:e2e -> db:test:setup provisions and migrates lynesign_test.
+        # scripts/ensure-test-db.mjs skips the embedded-postgres bootstrap when
+        # CI is set (GitHub sets CI=true) and runs migrate deploy + seed against
+        # the service container instead.
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+          if-no-files-found: ignore

@@ -1,0 +1,874 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MANAGER
+  CONTENT_MANAGER
+  VIEWER
+}
+
+enum MembershipStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum PlanKey {
+  TRIAL
+  STARTER
+  GROWTH
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
+enum AuditActorType {
+  USER
+  SCREEN
+  SYSTEM
+}
+
+enum OutboundEmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum MediaKind {
+  IMAGE
+  VIDEO
+  WEB
+}
+
+enum MediaStatus {
+  UPLOADING
+  READY
+  FAILED
+}
+
+enum MediaJobStatus {
+  PENDING
+  DONE
+  FAILED
+}
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String?
+  hashedPassword    String?
+  emailVerified     DateTime? @db.Timestamptz(3)
+  mustResetPassword Boolean   @default(false)
+  isSuperAdmin      Boolean   @default(false)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(3)
+
+  accounts             Account[]
+  sessions             Session[]
+  memberships          Membership[]
+  invitationsSent      Invitation[]   @relation("InvitedBy")
+  uploadedMedia        MediaAsset[]   @relation("MediaUploader")
+  createdPlaylists     Playlist[]     @relation("PlaylistCreator")
+  createdCampaigns     Campaign[]     @relation("CampaignCreator")
+  createdScheduleRules ScheduleRule[] @relation("ScheduleRuleCreator")
+}
+
+model Organization {
+  id         String    @id @default(cuid())
+  name       String
+  slug       String    @unique
+  createdAt  DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @db.Timestamptz(3)
+  archivedAt DateTime? @db.Timestamptz(3)
+
+  memberships           Membership[]
+  invitations           Invitation[]
+  subscription          Subscription?
+  auditLogs             AuditLog[]
+  locations             Location[]
+  screens               Screen[]
+  canvases              Canvas[]
+  mediaFolders          MediaFolder[]
+  mediaAssets           MediaAsset[]
+  playlists             Playlist[]
+  playlistItems         PlaylistItem[]
+  campaigns             Campaign[]
+  campaignScreens       CampaignScreen[]
+  campaignLocations     CampaignLocation[]
+  scheduleRules         ScheduleRule[]
+  scheduleRuleScreens   ScheduleRuleScreen[]
+  scheduleRuleLocations ScheduleRuleLocation[]
+  playbackEvents        PlaybackEvent[]
+}
+
+model Membership {
+  id             String           @id @default(cuid())
+  userId         String
+  organizationId String
+  role           Role
+  status         MembershipStatus @default(ACTIVE)
+  createdAt      DateTime         @default(now()) @db.Timestamptz(3)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}
+
+model Invitation {
+  id              String    @id @default(cuid())
+  organizationId  String
+  email           String
+  role            Role
+  token           String    @unique
+  expiresAt       DateTime  @db.Timestamptz(3)
+  acceptedAt      DateTime? @db.Timestamptz(3)
+  invitedByUserId String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy    User         @relation("InvitedBy", fields: [invitedByUserId], references: [id])
+
+  @@index([organizationId])
+  @@index([email])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime @db.Timestamptz(3)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime @db.Timestamptz(3)
+
+  @@unique([identifier, token])
+}
+
+model Plan {
+  key             PlanKey @id
+  name            String
+  maxScreens      Int?
+  maxStorageBytes BigInt?
+  maxUsers        Int?
+  maxLocations    Int?
+  features        Json    @default("{}")
+  isPublic        Boolean @default(true)
+
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  organizationId       String             @unique
+  planKey              PlanKey
+  status               SubscriptionStatus @default(TRIALING)
+  trialEndsAt          DateTime?          @db.Timestamptz(3)
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  createdAt            DateTime           @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime           @updatedAt @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  plan         Plan         @relation(fields: [planKey], references: [key])
+}
+
+model AuditLog {
+  id             String         @id @default(cuid())
+  organizationId String?
+  actorType      AuditActorType
+  actorId        String?
+  action         String
+  targetType     String
+  targetId       String?
+  metadata       Json           @default("{}")
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+}
+
+enum ScreenStatus {
+  UNPAIRED
+  ONLINE
+  OFFLINE
+  DISABLED
+}
+
+enum FrameType {
+  CLOCK
+  PICTURE
+  VIDEO
+  YOUTUBE
+  HTML
+  MEMO
+  OUTLOOK
+  REPORT
+  POWERBI
+  WEATHER
+  NEWS
+  WEB
+}
+
+model Location {
+  id              String   @id @default(cuid())
+  organizationId  String
+  parentId        String?
+  legacyId        Int?     @unique
+  name            String
+  addressLine1    String?
+  addressLine2    String?
+  city            String?
+  region          String?
+  postalCode      String?
+  countryCode     String?
+  latitude        Float?
+  longitude       Float?
+  timeZone        String   @default("UTC")
+  locale          String   @default("en-US")
+  temperatureUnit String?  @db.Char(1)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent         Location?       @relation("LocationTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children       Location[]      @relation("LocationTree")
+  screens        Screen[]
+  frameLocations FrameLocation[]
+
+  campaignLocations CampaignLocation[]
+
+  scheduleRuleLocations ScheduleRuleLocation[]
+
+  @@index([organizationId])
+  @@index([parentId])
+}
+
+model Screen {
+  id                  String       @id @default(cuid())
+  organizationId      String
+  locationId          String
+  legacyId            Int?         @unique
+  name                String
+  pairingCode         String?      @unique
+  deviceTokenHash     String?      @unique
+  status              ScreenStatus @default(UNPAIRED)
+  lastSeenAt          DateTime?    @db.Timestamptz(3)
+  canvasId            String?
+  playlistId          String?
+  pollIntervalSeconds Int          @default(60)
+  orientation         String?
+  notes               String?
+  createdAt           DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime     @updatedAt @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  location     Location     @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  canvas       Canvas?      @relation(fields: [canvasId], references: [id], onDelete: SetNull)
+  playlist     Playlist?    @relation(fields: [playlistId], references: [id], onDelete: SetNull)
+
+  campaignScreens CampaignScreen[]
+
+  scheduleRuleScreens ScheduleRuleScreen[]
+
+  playbackEvents PlaybackEvent[]
+
+  @@index([organizationId])
+  @@index([locationId])
+  @@index([playlistId])
+}
+
+model Canvas {
+  id                String    @id @default(cuid())
+  organizationId    String
+  legacyId          Int?      @unique
+  name              String
+  width             Int
+  height            Int
+  backgroundColor   String?
+  backgroundImageId String?
+  revision          Int       @default(1)
+  createdAt         DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt         DateTime  @updatedAt @db.Timestamptz(3)
+  archivedAt        DateTime? @db.Timestamptz(3)
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  backgroundImage MediaAsset?  @relation("CanvasBackground", fields: [backgroundImageId], references: [id], onDelete: SetNull)
+  panels          Panel[]
+  screens         Screen[]
+
+  @@index([organizationId])
+  @@index([organizationId, archivedAt])
+}
+
+model Panel {
+  id             String  @id @default(cuid())
+  organizationId String
+  canvasId       String
+  legacyId       Int?    @unique
+  name           String?
+  x              Int
+  y              Int
+  width          Int
+  height         Int
+  zIndex         Int     @default(0)
+  noScroll       Boolean @default(false)
+
+  canvas Canvas  @relation(fields: [canvasId], references: [id], onDelete: Cascade)
+  frames Frame[]
+
+  @@index([canvasId])
+  @@index([organizationId])
+}
+
+model Frame {
+  id              String    @id @default(cuid())
+  organizationId  String
+  panelId         String
+  legacyId        Int?      @unique
+  sortOrder       Int       @default(0)
+  durationSeconds Int       @default(10)
+  type            FrameType
+  locationScoped  Boolean   @default(false)
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+
+  panel          Panel           @relation(fields: [panelId], references: [id], onDelete: Cascade)
+  content        Content?
+  frameLocations FrameLocation[]
+
+  @@index([panelId])
+  @@index([organizationId])
+}
+
+model FrameLocation {
+  frameId        String
+  locationId     String
+  organizationId String
+
+  frame    Frame    @relation(fields: [frameId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@id([frameId, locationId])
+  @@index([organizationId])
+}
+
+model Content {
+  id             String  @id @default(cuid())
+  organizationId String
+  frameId        String  @unique
+  legacyId       Int?    @unique
+  name           String?
+
+  frame Frame @relation(fields: [frameId], references: [id], onDelete: Cascade)
+
+  clock   Clock?
+  picture Picture?
+  video   Video?
+  youtube Youtube?
+  html    Html?
+  web     Web?
+  memo    Memo?
+  outlook Outlook?
+  report  Report?
+  powerbi Powerbi?
+  weather Weather?
+  news    News?
+
+  @@index([organizationId])
+}
+
+model Clock {
+  contentId      String  @id
+  organizationId String
+  type           Int     @default(0)
+  showDate       Boolean @default(true)
+  showTime       Boolean @default(true)
+  showSeconds    Boolean @default(true)
+  label          String?
+  timeZone       String?
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+model Picture {
+  contentId      String  @id
+  organizationId String
+  mediaRef       String?
+  mode           String?
+  mediaAssetId   String?
+
+  content    Content     @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  mediaAsset MediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
+}
+
+model Video {
+  contentId      String  @id
+  organizationId String
+  mediaRef       String?
+  mediaAssetId   String?
+
+  content    Content     @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  mediaAsset MediaAsset? @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
+}
+
+model Youtube {
+  contentId      String  @id
+  organizationId String
+  videoId        String
+  aspect         String?
+  quality        String?
+  rate           String?
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+model Html {
+  contentId      String @id
+  organizationId String
+  body           String
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+model Web {
+  contentId      String @id
+  organizationId String
+  url            String
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+model Memo {
+  contentId      String @id
+  organizationId String
+  body           String
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+model Outlook {
+  contentId      String  @id
+  organizationId String
+  mode           Int     @default(0)
+  privacy        Int     @default(0)
+  accountRef     String?
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+model Report {
+  contentId      String  @id
+  organizationId String
+  path           String
+  serverRef      String?
+  mode           Int     @default(0)
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+model Powerbi {
+  contentId      String  @id
+  organizationId String
+  url            String
+  type           Int     @default(0)
+  accountRef     String?
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+model Weather {
+  contentId      String @id
+  organizationId String
+  type           Int    @default(0)
+  provider       Int    @default(0)
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+model News {
+  contentId      String @id
+  organizationId String
+  feedUrl        String
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+}
+
+/// Global outbound email queue. Deliberately NOT tenant-scoped: it has no
+/// organizationId and is absent from the RLS policy list. The worker's
+/// sendInvitationEmails job drains it with the unscoped Prisma client.
+model OutboundEmail {
+  id        String              @id @default(cuid())
+  to        String
+  subject   String
+  html      String
+  status    OutboundEmailStatus @default(PENDING)
+  attempts  Int                 @default(0)
+  lastError String?
+  createdAt DateTime            @default(now()) @db.Timestamptz(3)
+  sentAt    DateTime?           @db.Timestamptz(3)
+
+  @@index([status, createdAt])
+}
+
+model LegacyIntegration {
+  id             String   @id @default(cuid())
+  organizationId String
+  legacyId       Int?     @unique
+  kind           String
+  payload        Json
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  @@index([organizationId])
+}
+
+model MediaFolder {
+  id             String   @id @default(cuid())
+  organizationId String
+  parentId       String?
+  name           String
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime @updatedAt @db.Timestamptz(3)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent       MediaFolder?  @relation("MediaFolderTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children     MediaFolder[] @relation("MediaFolderTree")
+  assets       MediaAsset[]
+
+  // This constraint does not cover root folders: Postgres treats NULL as
+  // distinct, so two `parentId IS NULL` rows with the same name do not collide.
+  // A partial unique index (`MediaFolder_organizationId_name_root_key`, added in
+  // migration 20260830190000_media_folder_root_unique) enforces the same
+  // uniqueness for root folders. Prisma schema cannot express partial indexes,
+  // so it lives only in raw SQL.
+  @@unique([organizationId, parentId, name])
+  @@index([organizationId])
+}
+
+model MediaAsset {
+  id               String      @id @default(cuid())
+  organizationId   String
+  folderId         String?
+  kind             MediaKind
+  status           MediaStatus @default(UPLOADING)
+  name             String
+  originalFilename String?
+  mimeType         String?
+  sizeBytes        BigInt      @default(0)
+  storageKey       String?
+  thumbnailKey     String?
+  checksum         String?
+  width            Int?
+  height           Int?
+  durationSeconds  Int?
+  url              String?
+  tags             String[]    @default([])
+  createdByUserId  String?
+  createdAt        DateTime    @default(now()) @db.Timestamptz(3)
+  updatedAt        DateTime    @updatedAt @db.Timestamptz(3)
+  archivedAt       DateTime?   @db.Timestamptz(3)
+
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  folder            MediaFolder?    @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  createdBy         User?           @relation("MediaUploader", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  pictures          Picture[]
+  videos            Video[]
+  playlistItems     PlaylistItem[]
+  playbackEvents    PlaybackEvent[]
+  canvasBackgrounds Canvas[]        @relation("CanvasBackground")
+
+  @@index([organizationId, folderId])
+  @@index([organizationId, kind])
+  @@index([organizationId, checksum])
+  @@index([organizationId, status])
+}
+
+/// Global media processing queue. Deliberately NOT tenant-scoped: it has no
+/// organizationId and is absent from the RLS policy list, exactly like
+/// OutboundEmail. A worker drains it with the unscoped Prisma client.
+model MediaProcessingJob {
+  id           String         @id @default(cuid())
+  mediaAssetId String         @unique
+  status       MediaJobStatus @default(PENDING)
+  attempts     Int            @default(0)
+  lastError    String?
+  createdAt    DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt    DateTime       @updatedAt @db.Timestamptz(3)
+
+  @@index([status, createdAt])
+}
+
+/// A named, ordered list of media assets a screen can play. Tenant-scoped.
+/// `revision` bumps on every content or setting change so a screen can tell
+/// its cached copy is stale. Soft-deleted via `archivedAt`.
+model Playlist {
+  id                          String    @id @default(cuid())
+  organizationId              String
+  name                        String
+  description                 String?
+  defaultImageDurationSeconds Int       @default(10)
+  defaultWebDurationSeconds   Int       @default(30)
+  revision                    Int       @default(1)
+  createdByUserId             String?
+  createdAt                   DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt                   DateTime  @updatedAt @db.Timestamptz(3)
+  archivedAt                  DateTime? @db.Timestamptz(3)
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      User?           @relation("PlaylistCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  items          PlaylistItem[]
+  screens        Screen[]
+  campaigns      Campaign[]
+  scheduleRules  ScheduleRule[]
+  playbackEvents PlaybackEvent[]
+
+  @@index([organizationId])
+  @@index([organizationId, archivedAt])
+}
+
+/// One entry in a playlist. The same asset may appear more than once, so there
+/// is no uniqueness on `[playlistId, mediaAssetId]`; reorder rewrites every
+/// row's `position` wholesale, so none on `[playlistId, position]` either.
+/// `durationSeconds` null means "fall back to the playlist default for the kind".
+model PlaylistItem {
+  id              String   @id @default(cuid())
+  organizationId  String
+  playlistId      String
+  mediaAssetId    String
+  position        Int
+  durationSeconds Int?
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @db.Timestamptz(3)
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  playlist     Playlist     @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  mediaAsset   MediaAsset   @relation(fields: [mediaAssetId], references: [id], onDelete: Restrict)
+
+  @@index([playlistId, position])
+  @@index([organizationId])
+  @@index([mediaAssetId])
+}
+
+/// A campaign runs an existing playlist across a set of screens and locations for
+/// an absolute UTC date window. While a campaign is active for a screen it takes
+/// over from that screen's base playlist. Tenant-scoped, RLS-forced. `revision`
+/// bumps on every content or targeting change so a screen can tell its cached
+/// copy is stale. Soft-deleted via `archivedAt`. `playlist` is `onDelete:
+/// Restrict` so a playlist a campaign references cannot be hard deleted.
+model Campaign {
+  id              String    @id @default(cuid())
+  organizationId  String
+  name            String
+  description     String?
+  playlistId      String
+  startsAt        DateTime  @db.Timestamptz(3)
+  endsAt          DateTime  @db.Timestamptz(3)
+  priority        Int       @default(0)
+  enabled         Boolean   @default(true)
+  revision        Int       @default(1)
+  createdByUserId String?
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
+  archivedAt      DateTime? @db.Timestamptz(3)
+
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  playlist       Playlist           @relation(fields: [playlistId], references: [id], onDelete: Restrict)
+  createdBy      User?              @relation("CampaignCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  screens        CampaignScreen[]
+  locations      CampaignLocation[]
+  scheduleRules  ScheduleRule[]
+  playbackEvents PlaybackEvent[]
+
+  @@index([organizationId])
+  @@index([organizationId, archivedAt])
+  @@index([organizationId, enabled, startsAt, endsAt])
+  @@index([playlistId])
+}
+
+/// Join row targeting one screen for a campaign. Cascades from both sides.
+model CampaignScreen {
+  id             String @id @default(cuid())
+  organizationId String
+  campaignId     String
+  screenId       String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaign     Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  screen       Screen       @relation(fields: [screenId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, screenId])
+  @@index([organizationId])
+  @@index([screenId])
+}
+
+/// Join row targeting one location for a campaign. A location target resolves to
+/// its direct screens only (no tree descent in this increment). Cascades from
+/// both sides.
+model CampaignLocation {
+  id             String @id @default(cuid())
+  organizationId String
+  campaignId     String
+  locationId     String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  campaign     Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  location     Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, locationId])
+  @@index([organizationId])
+  @@index([locationId])
+}
+
+/// A recurring weekly day-parting rule. While the rule is active for a screen
+/// (current weekday in `daysOfWeek`, current minute-of-day within
+/// `[startMinute, endMinute)`, and today within the optional effective window)
+/// it plays either a playlist or a campaign on the targeted screens and
+/// locations. Exactly one of `playlistId` / `campaignId` is set, enforced by the
+/// `schedule_rule_payload_xor` CHECK constraint in the migration. Tenant-scoped,
+/// RLS-forced. `revision` bumps on every content or targeting change so a screen
+/// can tell its cached copy is stale. Soft-deleted via `archivedAt`. `playlist`
+/// and `campaign` are `onDelete: Restrict` so a payload a rule references cannot
+/// be hard deleted.
+model ScheduleRule {
+  id              String    @id @default(cuid())
+  organizationId  String
+  name            String?
+  playlistId      String?
+  campaignId      String?
+  daysOfWeek      Int[]
+  startMinute     Int
+  endMinute       Int
+  // @db.Date; Prisma returns UTC-midnight DateTime. Treat as a plain calendar date (.toISOString().slice(0,10)).
+  effectiveFrom   DateTime? @db.Date
+  effectiveUntil  DateTime? @db.Date
+  enabled         Boolean   @default(true)
+  revision        Int       @default(1)
+  createdByUserId String?
+  createdAt       DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime  @updatedAt @db.Timestamptz(3)
+  archivedAt      DateTime? @db.Timestamptz(3)
+
+  organization   Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  playlist       Playlist?              @relation(fields: [playlistId], references: [id], onDelete: Restrict)
+  campaign       Campaign?              @relation(fields: [campaignId], references: [id], onDelete: Restrict)
+  createdBy      User?                  @relation("ScheduleRuleCreator", fields: [createdByUserId], references: [id], onDelete: SetNull)
+  screens        ScheduleRuleScreen[]
+  locations      ScheduleRuleLocation[]
+  playbackEvents PlaybackEvent[]
+
+  @@index([organizationId])
+  @@index([organizationId, enabled, archivedAt])
+  @@index([playlistId])
+  @@index([campaignId])
+}
+
+/// Join row targeting one screen for a schedule rule. Cascades from both sides.
+model ScheduleRuleScreen {
+  id             String @id @default(cuid())
+  organizationId String
+  scheduleRuleId String
+  screenId       String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  scheduleRule ScheduleRule @relation(fields: [scheduleRuleId], references: [id], onDelete: Cascade)
+  screen       Screen       @relation(fields: [screenId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleRuleId, screenId])
+  @@index([organizationId])
+  @@index([screenId])
+}
+
+/// Join row targeting one location for a schedule rule. A location target
+/// resolves to its direct screens only (no tree descent in this increment).
+/// Cascades from both sides.
+model ScheduleRuleLocation {
+  id             String @id @default(cuid())
+  organizationId String
+  scheduleRuleId String
+  locationId     String
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  scheduleRule ScheduleRule @relation(fields: [scheduleRuleId], references: [id], onDelete: Cascade)
+  location     Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@unique([scheduleRuleId, locationId])
+  @@index([organizationId])
+  @@index([locationId])
+}
+
+/// One row per airing a paired player reported: append-only proof-of-play.
+/// `id` is the client-supplied device event id and doubles as the idempotency
+/// key, so it has no `@default`; a replayed report carrying the same id is a
+/// no-op. The primary key is composite, `@@id([organizationId, id])`, so the
+/// identity is tenant-local: a client-supplied id from one organization can
+/// never collide with another organization's row, and `skipDuplicates` dedupes
+/// on the pair rather than on the bare id below RLS. An event outlives the
+/// content it describes, so every content FK is optional and `onDelete:
+/// SetNull`, while `organization` and `screen` cascade.
+/// Tenant-scoped, RLS-forced. `source` is a plain string, validated in zod at
+/// the API edge rather than as a Prisma enum. The
+/// `playback_event_duration_nonneg` CHECK in the migration bounds
+/// `durationSeconds` to `[0, 86400]` seconds.
+model PlaybackEvent {
+  id              String
+  organizationId  String
+  screenId        String
+  mediaAssetId    String?
+  playlistId      String?
+  source          String
+  campaignId      String?
+  scheduleRuleId  String?
+  airedAt         DateTime @db.Timestamptz(3)
+  durationSeconds Int
+  receivedAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  organization Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  screen       Screen        @relation(fields: [screenId], references: [id], onDelete: Cascade)
+  mediaAsset   MediaAsset?   @relation(fields: [mediaAssetId], references: [id], onDelete: SetNull)
+  playlist     Playlist?     @relation(fields: [playlistId], references: [id], onDelete: SetNull)
+  campaign     Campaign?     @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  scheduleRule ScheduleRule? @relation(fields: [scheduleRuleId], references: [id], onDelete: SetNull)
+
+  @@id([organizationId, id])
+  @@index([organizationId, airedAt])
+  @@index([organizationId, mediaAssetId, airedAt])
+  @@index([organizationId, campaignId, airedAt])
+  @@index([organizationId, scheduleRuleId, airedAt])
+  @@index([screenId, airedAt])
+  @@index([airedAt])
+}

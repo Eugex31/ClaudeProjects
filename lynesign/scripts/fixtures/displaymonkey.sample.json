@@ -1,0 +1,126 @@
+{
+  "_comment": "Fake Display Monkey dump for migration tests. Field names mirror the DM SQL Server schema (SQL/install.sql). Contains only synthetic data. Frame.Type is a synthesized column standing in for DM Template.FrameType; see scripts/dm/map.ts for the mapFrameType contract.",
+  "levels": [
+    { "LevelId": 1, "Name": "Head Office" }
+  ],
+  "locations": [
+    {
+      "LocationId": 10,
+      "LevelId": 1,
+      "Name": "Lobby North",
+      "AreaId": null,
+      "TemperatureUnit": "C",
+      "Latitude": 51.5074,
+      "Longitude": -0.1278,
+      "DateFormat": "dd/MM/yyyy",
+      "TimeFormat": "HH:mm",
+      "Woeid": null,
+      "Culture": "en-GB",
+      "TimeZone": "Europe/London"
+    },
+    {
+      "LocationId": 11,
+      "LevelId": 1,
+      "Name": "Cafeteria",
+      "AreaId": null,
+      "TemperatureUnit": "F",
+      "Latitude": 40.7128,
+      "Longitude": -74.006,
+      "DateFormat": "MM/dd/yyyy",
+      "TimeFormat": "hh:mm tt",
+      "Woeid": null,
+      "Culture": "en-US",
+      "TimeZone": "America/New_York"
+    }
+  ],
+  "displays": [
+    {
+      "DisplayId": 100,
+      "Name": "Lobby North Screen",
+      "Host": "LOBBY-PC-01",
+      "CanvasId": 20,
+      "LocationId": 10,
+      "NoScroll": true,
+      "ReadyTimeout": 0,
+      "PollInterval": 45,
+      "ErrorLength": 0,
+      "NoCursor": true,
+      "RecycleTime": null
+    },
+    {
+      "DisplayId": 101,
+      "Name": "Cafeteria Screen",
+      "Host": "CAFE-PC-07",
+      "CanvasId": 20,
+      "LocationId": 11,
+      "NoScroll": false,
+      "ReadyTimeout": 0,
+      "PollInterval": 0,
+      "ErrorLength": 0,
+      "NoCursor": false,
+      "RecycleTime": null
+    }
+  ],
+  "canvases": [
+    {
+      "CanvasId": 20,
+      "Name": "Main 1080p",
+      "Height": 1080,
+      "Width": 1920,
+      "BackgroundImage": null,
+      "BackgroundColor": "#000000"
+    }
+  ],
+  "panels": [
+    { "PanelId": 30, "CanvasId": 20, "Top": 0, "Left": 0, "Height": 1080, "Width": 1440, "Name": "Main", "FadeLength": 0 },
+    { "PanelId": 31, "CanvasId": 20, "Top": 0, "Left": 1440, "Height": 1080, "Width": 480, "Name": "Sidebar", "FadeLength": 0 }
+  ],
+  "frames": [
+    { "FrameId": 40, "PanelId": 30, "Duration": 15, "BeginsOn": null, "EndsOn": null, "Sort": 1, "TemplateId": 0, "CacheInterval": 0, "Type": 0 },
+    { "FrameId": 41, "PanelId": 30, "Duration": 20, "BeginsOn": null, "EndsOn": null, "Sort": 2, "TemplateId": 0, "CacheInterval": 0, "Type": 1 },
+    { "FrameId": 42, "PanelId": 31, "Duration": 10, "BeginsOn": null, "EndsOn": null, "Sort": 1, "TemplateId": 0, "CacheInterval": 0, "Type": 4 }
+  ],
+  "frameLocations": [
+    { "FrameId": 40, "LocationId": 10 },
+    { "FrameId": 41, "LocationId": 10 },
+    { "FrameId": 42, "LocationId": 11 }
+  ],
+  "content": [
+    { "ContentId": 50, "Name": "lobby-welcome.jpg", "Type": 0 }
+  ],
+  "clocks": [
+    { "FrameId": 40, "Type": 0, "ShowDate": true, "ShowTime": true, "Label": "London", "TimeZone": "Europe/London", "ShowSeconds": true }
+  ],
+  "pictures": [
+    { "FrameId": 41, "ContentId": 50, "Mode": 0 }
+  ],
+  "htmls": [
+    { "FrameId": 42, "Name": "Sidebar promo", "Content": "<h1>Welcome to Head Office</h1>" }
+  ],
+  "videos": [],
+  "youtubes": [],
+  "memos": [],
+  "outlooks": [],
+  "reports": [],
+  "powerbis": [],
+  "weathers": [],
+  "newsItems": [],
+  "users": [
+    { "uname": "admin", "Pwd": "PLAINTEXT-DISCARDED", "userRole": "admin" },
+    { "uname": "viewer", "Pwd": "PLAINTEXT-DISCARDED", "userRole": "viewer" }
+  ],
+  "azureAccounts": [
+    {
+      "AccountId": 60,
+      "Name": "PowerBI Service",
+      "Resource": 0,
+      "ClientId": "00000000-0000-0000-0000-000000000000",
+      "ClientSecret": "FAKE-CLIENT-SECRET-do-not-use",
+      "TenantId": "11111111-1111-1111-1111-111111111111",
+      "User": "svc-powerbi@example.com"
+    }
+  ],
+  "exchangeAccounts": [],
+  "oauthAccounts": [],
+  "reportServers": []
+}
