@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<!--[if mso]>
+<noscript>
+<xml>
+<o:OfficeDocumentSettings>
+<o:PixelsPerInch>96</o:PixelsPerInch>
+</o:OfficeDocumentSettings>
+</xml>
+</noscript>
+<![endif]-->
+<title>LyneSign</title>
+<!--
+  LyneSign branded marketing email template
+  ------------------------------------------
+  Table-based layout, inline CSS throughout — built for Outlook/Gmail/Apple
+  Mail compatibility rather than modern CSS (flexbox/grid have poor-to-zero
+  support across those clients). The <style> block below is a progressive
+  enhancement layer only (mobile stacking + minor spacing) — every element
+  still has a safe inline-style fallback, so clients that strip <style>
+  entirely (e.g. some webmail proxies) still render a correct single-column
+  email.
+
+  Colors and fonts are pulled from lynesign.com's live computed styles
+  (verified via browser devtools against the actual site, not estimated):
+    --color-navy:  #062A43   (hero + footer background)
+    --color-tan:   #DDA974   (accent, icon badges)
+    --color-body:  #666666   (body copy on white)
+    --color-footer-text: #C7CDD9  (body copy on navy)
+  Headings use Ubuntu, body/buttons use Montserrat — both with Helvetica/
+  Arial/sans-serif fallbacks, since neither is a web-safe email font and
+  most clients (notably Outlook desktop) will render the fallback.
+
+  SECTION LAYOUT (matches the cloudHQ/MailKing-style reference this was
+  restructured against):
+    1. Header        — logo, centered
+    2. Hero band      — solid navy, small icon badge + bold headline only
+                        (no CTA button/supporting text — this is a thin
+                        announcement band, not a hero-with-CTA)
+    3. Body           — greeting + main message + a support link
+    4. Media block    — optional flattened image/video thumbnail. The play
+                        icon (if any) must be baked into the image asset
+                        itself, not a CSS overlay — a real position:absolute
+                        overlay needs style properties composeEmail.ts's
+                        sanitizer doesn't allow today, and absolute-position
+                        tricks are fragile in Outlook regardless. Every real
+                        ESP handles "video in email" this same way.
+    5. Sign-off       — "Thank you," + sender name/team
+    6. Contact band   — light background, "Get in touch" + support email
+    7. Social icons   — its own section (Facebook, LinkedIn, Instagram,
+                        YouTube), between the contact band and footer bar
+    8. Footer bar     — solid navy, copyright line only
+
+  VARIABLE PLACEHOLDERS (replace before sending):
+    {logo_url}       — absolute HTTPS URL to the LyneSign logo
+    {icon_url}       — small icon shown in the hero band (leave the glyph
+                       fallback below in place if you have no icon asset)
+    {headline}       — hero band headline
+    {main_message}   — body section's main paragraph
+    {support_link}   — "Contact support" link destination
+    {media_url}      — optional media block image (delete the whole media
+                       <tr> if this template has no image/video)
+    {media_link}     — optional, wraps the media image in a link
+    {sender_name}    — sign-off name
+    {sender_team}    — optional, second line under sender_name
+    {support_email}  — contact band's support email address
+    {unsubscribe_link} — unsubscribe URL (required for real sends outside
+                       this app — CAN-SPAM). Not used when this template is
+                       sent through the app itself, which appends its own
+                       real unsubscribe footer automatically.
+
+  These use single curly braces ({placeholder}) deliberately — the app's own
+  {{merge_var}} syntax (first_name, company, etc.) uses double braces, so the
+  two schemes don't collide. The body section below uses the app's real
+  {{first_name}} merge var for the greeting, since that's a genuine
+  per-contact field — everything else here is a manual per-campaign slot.
+-->
+<style>
+  body, table, td { -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; }
+  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+  body { margin: 0; padding: 0; width: 100% !important; background-color: #F4F4F4; }
+
+  @media only screen and (max-width: 600px) {
+    .email-container { width: 100% !important; max-width: 100% !important; }
+    .mobile-pad { padding-left: 24px !important; padding-right: 24px !important; }
+    .hero-heading { font-size: 24px !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#F4F4F4;">
+  <!-- Preheader (hidden preview text shown next to subject line in the inbox) -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F4F4F4;">
+    {main_message}
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F4F4F4;">
+    <tr>
+      <td align="center" style="padding:24px 16px;">
+
+        <!--[if mso]>
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" align="center"><tr><td>
+        <![endif]-->
+        <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" border="0" align="center" style="width:600px;max-width:600px;background-color:#FFFFFF;">
+
+          <!-- 1. Header -->
+          <tr>
+            <td align="center" class="mobile-pad" style="padding:32px 40px 24px 40px;background-color:#FFFFFF;">
+              <img src="{logo_url}" width="160" alt="LyneSign" style="display:block;border:0;width:160px;max-width:100%;">
+            </td>
+          </tr>
+
+          <!-- 2. Hero band: icon badge + headline only, no CTA -->
+          <tr>
+            <td align="center" class="mobile-pad" style="padding:40px 40px;background-color:#062A43;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="padding-bottom:16px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="48" height="48" align="center" valign="middle" style="width:48px;height:48px;border-radius:24px;border:2px solid #DDA974;font-size:20px;line-height:44px;color:#DDA974;font-family:Arial,sans-serif;">
+                          &#9993;
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              <h1 class="hero-heading" style="margin:0;font-family:Ubuntu,Helvetica,Arial,sans-serif;font-size:26px;line-height:1.3;font-weight:700;color:#FFFFFF;">
+                {headline}
+              </h1>
+            </td>
+          </tr>
+
+          <!-- 3. Body -->
+          <tr>
+            <td class="mobile-pad" style="padding:40px 40px 8px 40px;background-color:#FFFFFF;">
+              <p style="margin:0 0 16px 0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+                Hi {{first_name}},
+              </p>
+              <p style="margin:0 0 20px 0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+                {main_message}
+              </p>
+              <p style="margin:0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#666666;">
+                Need help? <a href="{support_link}" style="color:#DDA974;font-weight:700;text-decoration:none;">Contact support</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- 4. Media block (optional — delete this <tr> if this template has no image/video) -->
+          <tr>
+            <td align="center" class="mobile-pad" style="padding:24px 40px 8px 40px;background-color:#FFFFFF;">
+              <a href="{media_link}" style="display:block;">
+                <img src="{media_url}" width="520" alt="" style="display:block;width:100%;max-width:520px;border-radius:12px;background-color:#E5E7EB;">
+              </a>
+            </td>
+          </tr>
+
+          <!-- 5. Sign-off -->
+          <tr>
+            <td class="mobile-pad" style="padding:24px 40px 40px 40px;background-color:#FFFFFF;">
+              <p style="margin:0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+                Thank you,<br>
+                {sender_name}<br>
+                {sender_team}
+              </p>
+            </td>
+          </tr>
+
+          <!-- 6. Contact band -->
+          <tr>
+            <td align="center" class="mobile-pad" style="padding:32px 40px;background-color:#F4F4F4;">
+              <p style="margin:0 0 8px 0;font-family:Ubuntu,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;color:#062A43;">
+                Get in touch
+              </p>
+              <p style="margin:0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;">
+                <a href="mailto:{support_email}" style="color:#062A43;text-decoration:underline;">{support_email}</a>
+              </p>
+              <p style="margin:12px 0 0 0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;">
+                <a href="{unsubscribe_link}" style="color:#666666;text-decoration:underline;">Unsubscribe</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- 7. Social icons row -->
+          <tr>
+            <td align="center" class="mobile-pad" style="padding:24px 40px;background-color:#FFFFFF;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding:0 6px;">
+                    <a href="https://www.facebook.com/LyneSign" target="_blank" style="display:inline-block;width:32px;height:32px;line-height:32px;border-radius:16px;background-color:#DDA974;text-align:center;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;color:#062A43;text-decoration:none;">F</a>
+                  </td>
+                  <td style="padding:0 6px;">
+                    <a href="https://www.linkedin.com/company/lynesign/" target="_blank" style="display:inline-block;width:32px;height:32px;line-height:32px;border-radius:16px;background-color:#DDA974;text-align:center;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;color:#062A43;text-decoration:none;">L</a>
+                  </td>
+                  <td style="padding:0 6px;">
+                    <a href="https://www.instagram.com/lynesign/" target="_blank" style="display:inline-block;width:32px;height:32px;line-height:32px;border-radius:16px;background-color:#DDA974;text-align:center;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;color:#062A43;text-decoration:none;">I</a>
+                  </td>
+                  <td style="padding:0 6px;">
+                    <a href="https://www.youtube.com/@LyneSignLLC" target="_blank" style="display:inline-block;width:32px;height:32px;line-height:32px;border-radius:16px;background-color:#DDA974;text-align:center;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;color:#062A43;text-decoration:none;">Y</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- 8. Footer bar -->
+          <tr>
+            <td align="center" style="padding:20px 40px;background-color:#062A43;">
+              <p style="margin:0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#C7CDD9;">
+                &copy; 2026 LyneSign. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+        <!--[if mso]>
+        </td></tr></table>
+        <![endif]-->
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -1,0 +1,78 @@
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mailpilot
+      POSTGRES_PASSWORD: mailpilot
+      POSTGRES_DB: mailpilot
+    ports:
+      # Host-side 5433 avoids clashing with a native Postgres install on the
+      # default 5432 — containers still talk to each other on 5432 internally.
+      - "5433:5432"
+    volumes:
+      # postgres 18+'s official image expects a single mount at
+      # /var/lib/postgresql (it places data in a version-specific
+      # subdirectory itself) — the old .../data convention no longer applies.
+      - postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mailpilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build:
+      context: .
+      target: worker
+    command: npx prisma migrate deploy
+    environment:
+      # Deliberately hard-coded (not read from .env): inside the compose
+      # network the DB host is the "postgres" service name, never localhost —
+      # `environment:` here intentionally overrides any DATABASE_URL your
+      # .env file sets for local (non-Docker) development.
+      DATABASE_URL: postgresql://mailpilot:mailpilot@postgres:5432/mailpilot?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      # Deliberately hard-coded (not read from .env): inside the compose
+      # network the DB host is the "postgres" service name, never localhost —
+      # `environment:` here intentionally overrides any DATABASE_URL your
+      # .env file sets for local (non-Docker) development.
+      DATABASE_URL: postgresql://mailpilot:mailpilot@postgres:5432/mailpilot?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+  worker:
+    build:
+      context: .
+      target: worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Deliberately hard-coded (not read from .env): inside the compose
+      # network the DB host is the "postgres" service name, never localhost —
+      # `environment:` here intentionally overrides any DATABASE_URL your
+      # .env file sets for local (non-Docker) development.
+      DATABASE_URL: postgresql://mailpilot:mailpilot@postgres:5432/mailpilot?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  postgres_data:
