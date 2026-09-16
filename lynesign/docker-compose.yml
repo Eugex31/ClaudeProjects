@@ -1,0 +1,143 @@
+# Production-parity topology.
+#
+# TENANT ISOLATION: every service below connects as `lynesign_app`, NOT as the
+# image's POSTGRES_USER. POSTGRES_USER is a Postgres superuser, and a superuser
+# bypasses row-level security even under FORCE ROW LEVEL SECURITY -- connecting
+# the app as it would silently switch off Layer 2 of the tenancy guard while
+# every test still passed. `docker/postgres-init/01-app-role.sql` creates
+# `lynesign_app` as LOGIN NOSUPERUSER and hands it ownership of the database and
+# the public schema. Do not "simplify" these URLs back to the superuser.
+services:
+  postgres:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lynesign
+      POSTGRES_PASSWORD: lynesign
+      POSTGRES_DB: lynesign
+    ports:
+      # Host-side 5433 avoids clashing with a native Postgres install on the
+      # default 5432 — containers still talk to each other on 5432 internally.
+      - "5433:5432"
+    volumes:
+      # postgres 18+'s official image expects a single mount at
+      # /var/lib/postgresql (it places data in a version-specific
+      # subdirectory itself) — the old .../data convention no longer applies.
+      - postgres_data:/var/lib/postgresql
+      # Runs once, on first initialisation of an empty data directory, as the
+      # bootstrap superuser. Creates the NOSUPERUSER role the app connects as.
+      # An existing volume was initialised before this file existed: recreate it
+      # (docker compose down -v) or create the role by hand.
+      - ./docker/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lynesign"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: lynesign
+      MINIO_ROOT_PASSWORD: lynesign-dev-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio-setup:
+    image: minio/mc
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 lynesign lynesign-dev-secret &&
+      mc mb --ignore-existing local/lynesign-media &&
+      mc anonymous set none local/lynesign-media
+      "
+
+  migrate:
+    build:
+      context: .
+      target: worker
+    command: npx prisma migrate deploy
+    environment:
+      # Deliberately hard-coded (not read from .env): inside the compose
+      # network the DB host is the "postgres" service name, never localhost —
+      # `environment:` here intentionally overrides any DATABASE_URL your
+      # .env file sets for local (non-Docker) development.
+      #
+      # Migrations run as the same NOSUPERUSER role, which owns the database and
+      # the public schema and so can run every DDL statement the migrations
+      # need. This matches scripts/dev-db.mjs and .github/workflows/ci.yml.
+      DATABASE_URL: postgresql://lynesign_app:lynesign@postgres:5432/lynesign?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      target: web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file: .env
+    environment:
+      # Deliberately hard-coded (not read from .env): inside the compose
+      # network the DB host is the "postgres" service name, never localhost —
+      # `environment:` here intentionally overrides any DATABASE_URL your
+      # .env file sets for local (non-Docker) development.
+      DATABASE_URL: postgresql://lynesign_app:lynesign@postgres:5432/lynesign?schema=public
+      # Object storage lives on the "minio" service name inside the compose
+      # network, so these override the localhost values a local .env carries.
+      STORAGE_ENDPOINT: http://minio:9000
+      STORAGE_REGION: us-east-1
+      STORAGE_BUCKET: lynesign-media
+      STORAGE_ACCESS_KEY_ID: lynesign
+      STORAGE_SECRET_ACCESS_KEY: lynesign-dev-secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      minio-setup:
+        condition: service_completed_successfully
+
+  worker:
+    build:
+      context: .
+      target: worker
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Deliberately hard-coded (not read from .env): inside the compose
+      # network the DB host is the "postgres" service name, never localhost —
+      # `environment:` here intentionally overrides any DATABASE_URL your
+      # .env file sets for local (non-Docker) development.
+      DATABASE_URL: postgresql://lynesign_app:lynesign@postgres:5432/lynesign?schema=public
+      STORAGE_ENDPOINT: http://minio:9000
+      STORAGE_REGION: us-east-1
+      STORAGE_BUCKET: lynesign-media
+      STORAGE_ACCESS_KEY_ID: lynesign
+      STORAGE_SECRET_ACCESS_KEY: lynesign-dev-secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+      minio-setup:
+        condition: service_completed_successfully
+
+volumes:
+  postgres_data:
+  minio_data:

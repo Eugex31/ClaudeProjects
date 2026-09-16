@@ -1,0 +1,17 @@
+/node_modules/
+/.next/
+/.pgdata/
+/.minio/
+.env
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/prisma/*.db
+
+# generated
+next-env.d.ts
+*.tsbuildinfo
+
+# Claude workflow scratch (CLAUDE.md), not a project artifact
+/tasks/
