@@ -1,0 +1,61 @@
+[
+  {"slug": "gym1", "status": "posted", "permalink": "https://www.instagram.com/p/DdXYJoGm3Ex/"},
+  {"slug": "patiobar", "status": "posted", "permalink": "https://www.instagram.com/p/DdXW4J_GVrp/"},
+  {"slug": "dealership", "status": "posted", "note": "posted manually by user before API workflow existed"},
+  {"slug": "barbershop2", "status": "posted", "note": "posted manually by user before API workflow existed"},
+  {"slug": "bagelshop", "status": "posted", "note": "posted manually by user before API workflow existed"},
+  {
+    "slug": "gym2",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/gym2.png",
+    "caption": "Advertise Where Fitness Never Sleeps.\n\nMembers walk past your ad on every set, every rep, every visit. Two screens, one packed gym floor, and nowhere else to look.\n\nlynesign.com/landing\n\n#LyneSign #HoustonGyms #IndoorAdvertising #DigitalSignage #LocalBusinessGrowth"
+  },
+  {
+    "slug": "icerink",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/icerink.png",
+    "caption": "Advertise Where the Whole Family's Watching.\n\nParents, kids, and fans, all stuck in one lobby with nowhere else to look. Get your brand on the screen they're already staring at.\n\nlynesign.com/landing\n\n#LyneSign #HoustonFamilies #IndoorAdvertising #LocalMarketing #DigitalSignage"
+  },
+  {
+    "slug": "supermarket",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/supermarket.png",
+    "caption": "Advertise Where the Line Never Ends.\n\nCheckout lines mean captive shoppers with time to notice your ad. Put your business right where they're already waiting.\n\nlynesign.com/landing\n\n#LyneSign #ShopLocal #IndoorAdvertising #HoustonBusiness #DigitalSignage"
+  },
+  {
+    "slug": "petstore",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/petstore.png",
+    "caption": "Advertise Where Pet Parents Actually Stop.\n\nLoyal customers, regular visits, and a screen they can't scroll past. Get seen where the regulars already are.\n\nlynesign.com/landing\n\n#LyneSign #HoustonPets #IndoorAdvertising #LocalBusiness #DigitalSignage"
+  },
+  {
+    "slug": "tireshop",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/tireshop.png",
+    "caption": "Advertise Where They're Stuck Waiting on New Tires.\n\nThree screens, one captive customer, nowhere to be but right there. Turn their wait into your win.\n\nlynesign.com/landing\n\n#LyneSign #HoustonAutoShops #IndoorAdvertising #DigitalSignage #LocalBusiness"
+  },
+  {
+    "slug": "nailsalon",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/nailsalon.png",
+    "caption": "Advertise Where They've Got Nowhere to Be for an Hour.\n\nLong appointments mean long, uninterrupted time with your ad. No scrolling, no skipping, just a screen and an hour to notice you.\n\nlynesign.com/landing\n\n#LyneSign #HoustonBeauty #IndoorAdvertising #DigitalSignage #LocalBusinessGrowth"
+  },
+  {
+    "slug": "pizzeria",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/pizzeria.png",
+    "caption": "Advertise Where Friends Split a Table.\n\nGood food, good company, and a screen everyone keeps glancing at. Get your business on the menu, so to speak.\n\nlynesign.com/landing\n\n#LyneSign #HoustonEats #IndoorAdvertising #DigitalSignage #LocalMarketing"
+  },
+  {
+    "slug": "diner",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/diner.png",
+    "caption": "Advertise Where the Table Talk Never Stops.\n\nEvery seated table is a few extra minutes with your brand on screen. Conversations linger, plates stay full, and your ad keeps playing.\n\nlynesign.com/landing\n\n#LyneSign #HoustonEats #IndoorAdvertising #DigitalSignage #LocalBusiness"
+  },
+  {
+    "slug": "skishop",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/skishop.png",
+    "caption": "Advertise Where Weekend Plans Get Made.\n\nCustomers already spending on what they love, with your ad right in view. Be part of the plan before the weekend even starts.\n\nlynesign.com/landing\n\n#LyneSign #IndoorAdvertising #HoustonBusiness #DigitalSignage #LocalMarketing"
+  }
+]
