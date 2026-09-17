@@ -6,9 +6,8 @@
   {"slug": "bagelshop", "status": "posted", "note": "posted manually by user before API workflow existed"},
   {
     "slug": "gym2",
-    "status": "pending",
-    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/gym2.png",
-    "caption": "Advertise Where Fitness Never Sleeps.\n\nMembers walk past your ad on every set, every rep, every visit. Two screens, one packed gym floor, and nowhere else to look.\n\nlynesign.com/landing\n\n#LyneSign #HoustonGyms #IndoorAdvertising #DigitalSignage #LocalBusinessGrowth"
+    "status": "posted",
+    "permalink": "https://www.instagram.com/p/DdZa_WroOB1/"
   },
   {
     "slug": "icerink",
