@@ -59,6 +59,16 @@ export async function PricingSection() {
                     <Check className="size-4 shrink-0 text-primary" />
                     {formatLimit(plan.templateLimit)} saved templates
                   </li>
+                  <li className="flex items-center gap-2">
+                    <Check className="size-4 shrink-0 text-primary" />
+                    {formatLimit(plan.aiGenerationsPerMonthLimit)} AI generations/month
+                  </li>
+                  {plan.socialAccountLimit !== 0 && (
+                    <li className="flex items-center gap-2">
+                      <Check className="size-4 shrink-0 text-primary" />
+                      {formatLimit(plan.socialAccountLimit)} social account{plan.socialAccountLimit === 1 ? "" : "s"}
+                    </li>
+                  )}
                   {plan.crmEnabled && (
                     <li className="flex items-center gap-2">
                       <Check className="size-4 shrink-0 text-primary" />

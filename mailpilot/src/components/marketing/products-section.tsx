@@ -1,7 +1,17 @@
-import { Workflow, FileText, Mail, Tags, BarChart3, Plug } from "lucide-react";
+import { Workflow, FileText, Mail, Tags, BarChart3, Plug, Sparkles, Share2 } from "lucide-react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const PRODUCTS = [
+  {
+    icon: Sparkles,
+    title: "AI Content Generation",
+    description: "Connect your own OpenAI or Anthropic key and generate email copy, captions, and images from a prompt — reviewed by you before anything sends.",
+  },
+  {
+    icon: Share2,
+    title: "Social Media Manager",
+    description: "Connect Facebook and Instagram, compose posts with AI-generated captions and images, and schedule them to publish automatically.",
+  },
   {
     icon: Workflow,
     title: "Automation Sequences",
@@ -38,9 +48,9 @@ export function ProductsSection() {
   return (
     <section id="products" className="mx-auto max-w-6xl px-4 py-20">
       <div className="mx-auto mb-12 max-w-2xl text-center">
-        <h2 className="text-3xl font-semibold tracking-tight">Everything you need to run cold email at scale</h2>
+        <h2 className="text-3xl font-semibold tracking-tight">One platform for AI-powered marketing</h2>
         <p className="mt-3 text-muted-foreground">
-          One platform for building, sending, and tracking campaigns — from a single cold email to a full lifecycle sequence.
+          Build, generate, send, post, and track — email and social, from a single cold email to a full lifecycle sequence.
         </p>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

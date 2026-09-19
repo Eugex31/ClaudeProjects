@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { MergeVarPicker } from "@/components/campaigns/merge-var-picker";
+import { AiGeneratePanel } from "@/components/ai/ai-generate-panel";
 import { RecipientsPanel } from "@/components/campaigns/recipients-panel";
 import { PreviewPane } from "@/components/campaigns/preview-pane";
 import { TestSendDialog } from "@/components/campaigns/test-send-dialog";
@@ -267,6 +268,15 @@ export function CampaignBuilder({ campaignId, userEmail }: { campaignId: string;
                   onFocus={() => (lastFocused.current = "subject")}
                 />
               </div>
+
+              {!locked && (
+                <AiGeneratePanel
+                  kind="campaign"
+                  existingSubject={getValues("subject")}
+                  existingBody={getValues("body")}
+                  onGenerated={(result) => loadTemplate({ subject: result.subject, body: result.bodyHtml, bodyFormat: "RICH_TEXT" })}
+                />
+              )}
 
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">

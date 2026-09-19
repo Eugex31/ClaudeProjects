@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EmailBodyEditor, type EmailBodyEditorHandle, type BodyFormat } from "@/components/campaigns/email-body-editor";
 import { BrowseTemplatesModal } from "@/components/templates/browse-templates-modal";
+import { AiGeneratePanel } from "@/components/ai/ai-generate-panel";
 
 export type StepRecord = {
   id: string;
@@ -165,6 +166,12 @@ export function StepFormDialog({
             <Label htmlFor="step-subject">Subject</Label>
             <Input id="step-subject" value={subject} onChange={(e) => setSubject(e.target.value)} />
           </div>
+          <AiGeneratePanel
+            kind="sequence-step"
+            existingSubject={subject}
+            existingBody={body}
+            onGenerated={(result) => loadTemplate({ subject: result.subject, body: result.bodyHtml, bodyFormat: "RICH_TEXT" })}
+          />
           <div className="flex flex-col gap-1.5">
             <Label>Body</Label>
             <EmailBodyEditor

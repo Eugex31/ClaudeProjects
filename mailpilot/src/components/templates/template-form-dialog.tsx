@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EmailBodyEditor, type BodyFormat } from "@/components/campaigns/email-body-editor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AiGeneratePanel } from "@/components/ai/ai-generate-panel";
 
 const NO_CATEGORY = "none";
 
@@ -183,6 +184,17 @@ export function TemplateFormDialog({
               </SelectContent>
             </Select>
           </div>
+          <AiGeneratePanel
+            kind="template"
+            existingSubject={subject}
+            existingBody={body}
+            onGenerated={(result) => {
+              setSubject(result.subject);
+              setBody(result.bodyHtml);
+              setBodyFormat("RICH_TEXT");
+            }}
+          />
+
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <Label>Body</Label>

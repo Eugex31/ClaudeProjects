@@ -47,6 +47,11 @@ model User {
   newsletters       Newsletter[]
   mondayIntegration        MondayIntegration?
   starterTemplateFavorites StarterTemplateFavorite[]
+  aiConnections            AiConnection[]
+  aiUsageCounters          AiUsageCounter[]
+  metaIdentity             MetaIdentity?
+  socialAccounts           SocialAccount[]
+  socialPosts              SocialPost[]
 }
 
 model Account {
@@ -518,6 +523,13 @@ model Plan {
   activeSequenceLimit Int     // -1 sentinel = unlimited
   templateLimit       Int     @default(-1) // -1 sentinel = unlimited
   crmEnabled          Boolean @default(false)
+  // AI generation is BYOK (AiConnection.apiKey, user's own key) — this caps
+  // abuse/support load, not cost, since the platform never pays per token.
+  // -1 sentinel = unlimited, same convention as the limits above.
+  aiGenerationsPerMonthLimit Int @default(-1)
+  // Number of connected Facebook Page / Instagram Business accounts. -1 =
+  // unlimited, same convention as the limits above.
+  socialAccountLimit Int @default(-1)
 
   subscriptions Subscription[]
 }
@@ -570,6 +582,121 @@ model MondayIntegration {
   updatedAt     DateTime  @updatedAt @db.Timestamptz(3)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ---------- AI ----------
+
+enum AiProvider {
+  OPENAI
+  ANTHROPIC
+}
+
+// BYOK: the user's own API key, encrypted at rest via lib/crypto/tokenCipher.ts
+// — same mechanism already used for Gmail's Account.access_token and
+// MondayIntegration.accessToken above. The platform never sees a per-token
+// cost; the user is billed directly by OpenAI/Anthropic.
+model AiConnection {
+  id        String     @id @default(cuid())
+  userId    String
+  provider  AiProvider
+  label     String // user-chosen, since someone may connect more than one key per provider
+  apiKey    String     @db.Text // encrypted
+  isDefault Boolean    @default(false)
+  createdAt DateTime   @default(now()) @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// One row per user per day — same shape/purpose as SendCounter, summed
+// across a billing period by checkAiUsageLimit (src/lib/billing.ts). Tracks
+// generation *count* only, never cost, since BYOK means the platform has no
+// per-token bill to meter.
+model AiUsageCounter {
+  userId String
+  date   DateTime @db.Date
+  count  Int      @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, date])
+}
+
+// ---------- Social ----------
+
+enum SocialPlatform {
+  FACEBOOK_PAGE
+  INSTAGRAM_BUSINESS
+}
+
+// The Facebook Login OAuth grant itself — one per user. Holds the long-lived
+// USER access token (~60 days), used only to call /me/accounts when
+// (re)configuring which Pages are activated. Never used to post — posting
+// always uses a SocialAccount's own Page-scoped token below.
+model MetaIdentity {
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  accessToken String    @db.Text // encrypted via lib/crypto/tokenCipher.ts, same as MondayIntegration
+  expiresAt   DateTime? @db.Timestamptz(3)
+  createdAt   DateTime  @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime  @updatedAt @db.Timestamptz(3)
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  socialAccounts SocialAccount[]
+}
+
+// One row per activated Facebook Page or its linked Instagram Business
+// account. Page access tokens don't expire on their own (tied to the user's
+// grant, not a separate clock) and the SAME Page token is reused for that
+// page's linked Instagram account's publish calls — Graph API issues no
+// separate IG token.
+model SocialAccount {
+  id                String         @id @default(cuid())
+  userId            String
+  metaIdentityId    String
+  platform          SocialPlatform
+  externalAccountId String // Facebook Page id, or Instagram Business Account id
+  displayName       String
+  accessToken       String         @db.Text // encrypted
+  connectedAt       DateTime       @default(now()) @db.Timestamptz(3)
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  metaIdentity MetaIdentity @relation(fields: [metaIdentityId], references: [id], onDelete: Cascade)
+  posts        SocialPost[]
+
+  @@unique([userId, platform, externalAccountId])
+  @@index([userId])
+}
+
+enum SocialPostStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHING
+  PUBLISHED
+  FAILED
+}
+
+model SocialPost {
+  id              String           @id @default(cuid())
+  userId          String
+  socialAccountId String
+  caption         String           @db.Text
+  mediaImageId    String? // TemplateImage.id — plain reference, no relation: TemplateImage is a generic shared asset store, not owned by posts
+  status          SocialPostStatus @default(DRAFT)
+  scheduledAt     DateTime?        @db.Timestamptz(3)
+  publishedAt     DateTime?        @db.Timestamptz(3)
+  externalPostId  String?
+  errorMessage    String?          @db.Text
+  lockedAt        DateTime?        @db.Timestamptz(3) // same stale-lock-reap pattern as CampaignRecipient
+  createdAt       DateTime         @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime         @updatedAt @db.Timestamptz(3)
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status, scheduledAt])
 }
 
 // Deliberately no relations at all, not even to the admin's own account or
