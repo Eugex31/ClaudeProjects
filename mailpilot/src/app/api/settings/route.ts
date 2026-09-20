@@ -5,7 +5,7 @@ import { getEffectiveSettings } from "@/lib/settings";
 import { settingsUpdateSchema } from "@/lib/validation/settings.schema";
 import { getConnectedGmailAddress } from "@/lib/gmail/getGmailClient";
 
-export const GET = withAuth(async (_req, { userId }) => {
+export const GET = withAuth(async (_req, { userId, activeProfile }) => {
   const [settings, user, connectedGmailAddress] = await Promise.all([
     getEffectiveSettings(userId),
     prisma.user.findUnique({ where: { id: userId }, select: { passwordHash: true } }),
@@ -20,6 +20,10 @@ export const GET = withAuth(async (_req, { userId }) => {
       hasSignatureLogo: !!signatureLogo,
       hasPassword: !!user?.passwordHash,
       connectedGmailAddress,
+      // Tells settings-form.tsx to route "Connect Gmail" through the
+      // profile-scoped hand-rolled OAuth flow instead of signIn("google") —
+      // see src/app/api/profile-gmail/connect/route.ts for why.
+      activeProfile,
     },
   });
 });

@@ -84,6 +84,90 @@ export async function generateEmailContent(userId: string, input: GenerateEmailI
   return { subject, bodyHtml };
 }
 
+export type GenerateSequencePlanInput = { prompt: string; stepCount: number; connectionId?: string };
+export type GenerateSequencePlanResult = { name: string; steps: { subject: string; bodyHtml: string }[] };
+
+// One AI call produces every step, not one call per step — cheaper (counts
+// as a single generation against the usage cap) and lets the model plan a
+// real narrative arc across the whole sequence (introduction → benefit
+// angles → social proof → urgency → close, scaled to stepCount) the way a
+// human would, rather than stepCount independent, repetitive drafts.
+export async function generateSequencePlan(userId: string, input: GenerateSequencePlanInput): Promise<GenerateSequencePlanResult> {
+  const connection = await resolveAiConnection(userId, input.connectionId);
+  const apiKey = decryptToken(connection.apiKey);
+
+  const system = [
+    `You design a ${input.stepCount}-part automated email sequence for the campaign the user describes.`,
+    `Respond with ONLY a JSON object of the shape {"name": string, "steps": [{"subject": string, "bodyHtml": string}, ...]} with exactly ${input.stepCount} items in "steps" — no other text.`,
+    "Give the sequence a real narrative arc across its steps: an introduction, then distinct benefit/value angles, social proof, urgency, and a close — adapted to however many steps were asked for.",
+    "Each step's bodyHtml should be plain HTML using only <p>, <br>, <b>, <strong>, <i>, <em>, <ul>, <ol>, <li>, <a href=\"...\"> — no <html>/<head>/<style>/<table>. Keep each step feeling like a short, personal note, not a heavy newsletter.",
+    "Use {{first_name}} where a personal greeting is natural.",
+  ].join("\n");
+
+  const raw =
+    connection.provider === "OPENAI"
+      ? await generateJsonOpenAi(apiKey, system, input.prompt)
+      : await generateJsonAnthropic(apiKey, system, input.prompt);
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("AI provider returned invalid JSON");
+  }
+  const { name, steps } = parsed as { name?: unknown; steps?: unknown };
+  if (typeof name !== "string" || !Array.isArray(steps) || steps.length === 0) {
+    throw new Error("AI provider response was missing name/steps");
+  }
+  const validSteps = steps.filter(
+    (s): s is { subject: string; bodyHtml: string } =>
+      typeof s === "object" && s !== null && typeof (s as { subject?: unknown }).subject === "string" && typeof (s as { bodyHtml?: unknown }).bodyHtml === "string"
+  );
+  if (validSteps.length === 0) {
+    throw new Error("AI provider returned no usable sequence steps");
+  }
+  return { name, steps: validSteps };
+}
+
+export type GenerateSocialPlanInput = { prompt: string; postCount: number; connectionId?: string };
+export type GenerateSocialPlanResult = { posts: { caption: string }[] };
+
+// Same one-call-for-everything reasoning as generateSequencePlan — postCount
+// distinct captions from a single generation, not postCount separate calls.
+export async function generateSocialCampaignPosts(userId: string, input: GenerateSocialPlanInput): Promise<GenerateSocialPlanResult> {
+  const connection = await resolveAiConnection(userId, input.connectionId);
+  const apiKey = decryptToken(connection.apiKey);
+
+  const system = [
+    `You write ${input.postCount} distinct social media captions for a single marketing campaign the user describes.`,
+    `Respond with ONLY a JSON object of the shape {"posts": [{"caption": string}, ...]} with exactly ${input.postCount} items — no other text.`,
+    "Each caption should take a different angle on the same campaign (not repeat the same message) — concise, plain text only (no HTML/markdown), with 2-5 relevant hashtags at the end where natural.",
+  ].join("\n");
+
+  const raw =
+    connection.provider === "OPENAI"
+      ? await generateJsonOpenAi(apiKey, system, input.prompt)
+      : await generateJsonAnthropic(apiKey, system, input.prompt);
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("AI provider returned invalid JSON");
+  }
+  const { posts } = parsed as { posts?: unknown };
+  if (!Array.isArray(posts) || posts.length === 0) {
+    throw new Error("AI provider response was missing posts");
+  }
+  const validPosts = posts.filter(
+    (p): p is { caption: string } => typeof p === "object" && p !== null && typeof (p as { caption?: unknown }).caption === "string"
+  );
+  if (validPosts.length === 0) {
+    throw new Error("AI provider returned no usable posts");
+  }
+  return { posts: validPosts };
+}
+
 export type GenerateCaptionInput = { prompt: string; connectionId?: string };
 
 // Reuses the same generateJson provider functions as generateEmailContent —

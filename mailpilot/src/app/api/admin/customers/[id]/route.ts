@@ -61,7 +61,18 @@ export const DELETE = withAdminAuth<{ id: string }>(async (req, { params, adminE
   });
 
   // Every relation to User cascades (onDelete: Cascade) — contacts, campaigns,
-  // settings, and subscription all go with it.
-  await prisma.user.delete({ where: { id: params.id } });
+  // settings, and subscription all go with it. Cascade stops at one hop
+  // though: deleting this user would remove their ClientProfile rows (they
+  // reference this user), but NOT the separate User rows those profiles
+  // themselves own — so any managed client profiles are deleted explicitly
+  // first, which cascades each one's own contacts/campaigns/etc in turn.
+  const profiles = await prisma.clientProfile.findMany({
+    where: { parentUserId: params.id },
+    select: { profileUserId: true },
+  });
+  await prisma.$transaction([
+    ...profiles.map((p) => prisma.user.delete({ where: { id: p.profileUserId } })),
+    prisma.user.delete({ where: { id: params.id } }),
+  ]);
   return NextResponse.json({ ok: true });
 });

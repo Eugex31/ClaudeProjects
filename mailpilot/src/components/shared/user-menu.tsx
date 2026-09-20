@@ -86,8 +86,8 @@ export function UserMenu({
             <AlertDialogTitle>Disconnect your Gmail account?</AlertDialogTitle>
             <AlertDialogDescription>
               {hasPassword
-                ? "This revokes Email Marketing's access to send email on your behalf. Any campaigns currently sending will be paused until you reconnect Gmail from Settings — you'll stay signed in."
-                : "This revokes Email Marketing's access to send email on your behalf and signs you out. Any campaigns currently sending will be paused until you reconnect. You'll need to sign in with Google again to resume sending."}
+                ? "This revokes LyneSign Marketing's access to send email on your behalf. Any campaigns currently sending will be paused until you reconnect Gmail from Settings — you'll stay signed in."
+                : "This revokes LyneSign Marketing's access to send email on your behalf and signs you out. Any campaigns currently sending will be paused until you reconnect. You'll need to sign in with Google again to resume sending."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

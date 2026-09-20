@@ -28,6 +28,7 @@ type Plan = {
   aiGenerationsPerMonthLimit: number;
   socialAccountLimit: number;
   crmEnabled: boolean;
+  profileLimit: number;
 };
 
 type Summary = {
@@ -39,12 +40,19 @@ type Summary = {
     cancelAtPeriodEnd: boolean;
     hasStripeCustomer: boolean;
   };
-  usage: { contacts: number; emailsThisPeriod: number; aiGenerationsThisPeriod: number; socialAccounts: number };
+  usage: {
+    contacts: number;
+    emailsThisPeriod: number;
+    aiGenerationsThisPeriod: number;
+    socialAccounts: number;
+    profiles: number;
+  };
   limits: {
     contactLimit: number;
     emailsPerMonthLimit: number;
     aiGenerationsPerMonthLimit: number;
     socialAccountLimit: number;
+    profileLimit: number;
   };
   plans: Plan[];
 };
@@ -132,6 +140,7 @@ export function BillingView() {
       : 0;
   const socialPct =
     limits.socialAccountLimit > 0 ? Math.min(100, (usage.socialAccounts / limits.socialAccountLimit) * 100) : 0;
+  const profilesPct = limits.profileLimit > 0 ? Math.min(100, (usage.profiles / limits.profileLimit) * 100) : 0;
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
@@ -195,6 +204,17 @@ export function BillingView() {
             </div>
             {limits.socialAccountLimit > 0 && <Progress value={socialPct} />}
           </div>
+          {limits.profileLimit !== 0 && (
+            <div className="flex flex-col gap-1.5">
+              <div className="flex justify-between text-sm">
+                <span>Managed client profiles</span>
+                <span className="text-muted-foreground">
+                  {usage.profiles.toLocaleString()} / {formatLimit(limits.profileLimit)}
+                </span>
+              </div>
+              {limits.profileLimit > 0 && <Progress value={profilesPct} />}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -227,6 +247,10 @@ export function BillingView() {
                   {plan.socialAccountLimit === 0 ? "No social accounts" : `${formatLimit(plan.socialAccountLimit)} social accounts`}
                   <br />
                   {plan.crmEnabled ? "CRM sync included" : "No CRM sync"}
+                  <br />
+                  {plan.profileLimit === 0
+                    ? "No managed client profiles"
+                    : `${formatLimit(plan.profileLimit)} managed client profile${plan.profileLimit === 1 ? "" : "s"}`}
                 </p>
                 {isCurrent ? (
                   <Badge className="mt-auto w-fit">Current plan</Badge>

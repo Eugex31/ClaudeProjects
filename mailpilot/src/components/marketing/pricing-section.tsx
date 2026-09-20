@@ -75,6 +75,12 @@ export async function PricingSection() {
                       CRM sync
                     </li>
                   )}
+                  {plan.profileLimit !== 0 && (
+                    <li className="flex items-center gap-2">
+                      <Check className="size-4 shrink-0 text-primary" />
+                      {formatLimit(plan.profileLimit)} managed client profile{plan.profileLimit === 1 ? "" : "s"}
+                    </li>
+                  )}
                 </ul>
                 <Button asChild variant={highlighted ? "default" : "outline"} className="w-full">
                   <Link href={isFree ? "/register" : "/register?callbackUrl=%2Fbilling"}>

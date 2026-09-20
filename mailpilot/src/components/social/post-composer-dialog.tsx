@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 type Account = { id: string; platform: "FACEBOOK_PAGE" | "INSTAGRAM_BUSINESS"; displayName: string };
 
@@ -26,6 +26,8 @@ export type SocialPostRecord = {
   caption: string;
   mediaImageId: string | null;
 };
+
+const PLATFORM_LABEL: Record<Account["platform"], string> = { FACEBOOK_PAGE: "Facebook", INSTAGRAM_BUSINESS: "Instagram" };
 
 export function PostComposerDialog({
   post,
@@ -39,7 +41,14 @@ export function PostComposerDialog({
   const isEdit = Boolean(post?.id);
   const [open, setOpen] = useState(false);
   const [accounts, setAccounts] = useState<Account[]>([]);
-  const [socialAccountId, setSocialAccountId] = useState(post?.socialAccountId ?? "");
+  // Multiple accounts only make sense when composing a NEW post — one
+  // caption + image, posted independently to each selected account (they
+  // succeed/fail on their own, e.g. Instagram needs an image and Facebook
+  // doesn't). Editing an existing post stays tied to the one account it was
+  // already created against, same as before.
+  const [selectedAccountIds, setSelectedAccountIds] = useState<Set<string>>(
+    new Set(post?.socialAccountId ? [post.socialAccountId] : [])
+  );
   const [caption, setCaption] = useState(post?.caption ?? "");
   const [mediaImageId, setMediaImageId] = useState<string | null>(post?.mediaImageId ?? null);
   const [mediaUrl, setMediaUrl] = useState<string | null>(
@@ -53,7 +62,7 @@ export function PostComposerDialog({
   function handleOpenChange(next: boolean) {
     setOpen(next);
     if (next) {
-      setSocialAccountId(post?.socialAccountId ?? "");
+      setSelectedAccountIds(new Set(post?.socialAccountId ? [post.socialAccountId] : []));
       setCaption(post?.caption ?? "");
       setMediaImageId(post?.mediaImageId ?? null);
       setMediaUrl(post?.mediaImageId ? `/api/template-images/${post.mediaImageId}` : null);
@@ -62,6 +71,16 @@ export function PostComposerDialog({
         .then((r) => r.json())
         .then((data) => setAccounts(data.accounts ?? []));
     }
+  }
+
+  function toggleAccount(id: string) {
+    if (isEdit) return; // locked to the post's original account
+    setSelectedAccountIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   }
 
   async function generateCaption() {
@@ -129,31 +148,40 @@ export function PostComposerDialog({
     e.target.value = "";
   }
 
-  async function persist(): Promise<string | null> {
-    if (!socialAccountId) {
-      toast.error("Choose an account");
-      return null;
+  // Creates (or, when editing, updates) one SocialPost row per selected
+  // account — same caption/image, independent rows so each account's
+  // status/errors stay its own (matches how the worker and post-now route
+  // already treat every SocialPost as a single-account unit).
+  async function persistAll(): Promise<string[]> {
+    if (selectedAccountIds.size === 0) {
+      toast.error("Choose at least one account");
+      return [];
     }
-    const payload = { socialAccountId, caption, mediaImageId };
-    const res = await fetch(isEdit ? `/api/social/posts/${post!.id}` : "/api/social/posts", {
-      method: isEdit ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      toast.error(data.error ?? "Failed to save post");
-      return null;
+    const ids: string[] = [];
+    for (const accountId of selectedAccountIds) {
+      const payload = { socialAccountId: accountId, caption, mediaImageId };
+      const res = await fetch(isEdit ? `/api/social/posts/${post!.id}` : "/api/social/posts", {
+        method: isEdit ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      const accountName = accounts.find((a) => a.id === accountId)?.displayName ?? accountId;
+      if (!res.ok) {
+        toast.error(`${accountName}: ${data.error ?? "Failed to save post"}`);
+        continue;
+      }
+      ids.push(data.post.id);
     }
-    return data.post.id;
+    return ids;
   }
 
   async function saveDraft() {
     setBusy("save");
-    const id = await persist();
+    const ids = await persistAll();
     setBusy(null);
-    if (!id) return;
-    toast.success("Draft saved");
+    if (ids.length === 0) return;
+    toast.success(ids.length === 1 ? "Draft saved" : `${ids.length} drafts saved`);
     setOpen(false);
     onSaved();
   }
@@ -164,51 +192,52 @@ export function PostComposerDialog({
       return;
     }
     setBusy("schedule");
-    const id = await persist();
-    if (!id) {
-      setBusy(null);
-      return;
+    const ids = await persistAll();
+    let scheduledCount = 0;
+    for (const id of ids) {
+      const res = await fetch(`/api/social/posts/${id}/schedule`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ scheduledAt: new Date(scheduledAt).toISOString() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed to schedule");
+        continue;
+      }
+      scheduledCount++;
     }
-    const res = await fetch(`/api/social/posts/${id}/schedule`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scheduledAt: new Date(scheduledAt).toISOString() }),
-    });
-    const data = await res.json().catch(() => ({}));
     setBusy(null);
-    if (!res.ok) {
-      toast.error(data.error ?? "Failed to schedule");
-      return;
-    }
-    toast.success("Post scheduled");
+    if (scheduledCount === 0) return;
+    toast.success(scheduledCount === 1 ? "Post scheduled" : `${scheduledCount} posts scheduled`);
     setOpen(false);
     onSaved();
   }
 
   async function postNow() {
     setBusy("post-now");
-    const id = await persist();
-    if (!id) {
-      setBusy(null);
-      return;
+    const ids = await persistAll();
+    for (const id of ids) {
+      const res = await fetch(`/api/social/posts/${id}/post-now`, { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error ?? "Failed to post");
+        continue;
+      }
+      const accountName = accounts.find((a) => a.id === data.post.socialAccountId)?.displayName ?? "Post";
+      if (data.post.status === "FAILED") {
+        toast.error(`${accountName}: ${data.post.errorMessage ?? "Posting failed"}`);
+      } else {
+        toast.success(`${accountName}: Posted`);
+      }
     }
-    const res = await fetch(`/api/social/posts/${id}/post-now`, { method: "POST" });
-    const data = await res.json().catch(() => ({}));
     setBusy(null);
-    if (!res.ok) {
-      toast.error(data.error ?? "Failed to post");
-      return;
-    }
-    if (data.post.status === "FAILED") {
-      toast.error(data.post.errorMessage ?? "Posting failed");
-    } else {
-      toast.success("Posted");
-    }
     setOpen(false);
     onSaved();
   }
 
-  const selectedAccount = accounts.find((a) => a.id === socialAccountId);
+  const selectedAccounts = accounts.filter((a) => selectedAccountIds.has(a.id));
+  const needsImage = selectedAccounts.some((a) => a.platform === "INSTAGRAM_BUSINESS");
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -216,27 +245,35 @@ export function PostComposerDialog({
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit post" : "New post"}</DialogTitle>
-          <DialogDescription>Compose a caption and image, then save as a draft, schedule it, or post now.</DialogDescription>
+          <DialogDescription>
+            {isEdit
+              ? "Compose a caption and image, then save as a draft, schedule it, or post now."
+              : "Compose a caption and image, pick one or more accounts, then save as a draft, schedule, or post now to all of them."}
+          </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label>Account</Label>
-            <Select value={socialAccountId} onValueChange={setSocialAccountId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose an account" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.displayName} ({a.platform === "FACEBOOK_PAGE" ? "Facebook" : "Instagram"})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {accounts.length === 0 && (
+            <Label>{isEdit ? "Account" : "Accounts"}</Label>
+            {accounts.length === 0 ? (
               <p className="text-xs text-muted-foreground">
                 No connected accounts yet — connect one on the Accounts tab first.
               </p>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {accounts.map((a) => (
+                  <label
+                    key={a.id}
+                    className="flex items-center gap-3 rounded-md border p-2.5 text-sm has-[:disabled]:opacity-60"
+                  >
+                    <Checkbox
+                      checked={selectedAccountIds.has(a.id)}
+                      onCheckedChange={() => toggleAccount(a.id)}
+                      disabled={isEdit && !selectedAccountIds.has(a.id)}
+                    />
+                    {a.displayName} ({PLATFORM_LABEL[a.platform]})
+                  </label>
+                ))}
+              </div>
             )}
           </div>
 
@@ -258,7 +295,7 @@ export function PostComposerDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <Label>Image {selectedAccount?.platform === "INSTAGRAM_BUSINESS" && "(required for Instagram)"}</Label>
+            <Label>Image {needsImage && "(required for Instagram)"}</Label>
             {mediaUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={mediaUrl} alt="" className="max-h-48 rounded-md border object-cover" />

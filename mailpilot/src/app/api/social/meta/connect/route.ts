@@ -7,7 +7,11 @@ const STATE_COOKIE = "meta_oauth_state";
 // Connect-while-logged-in, not a sign-in flow — same reasoning as Monday's
 // connect route (src/app/api/integrations/monday/connect/route.ts): Meta
 // isn't an identity source for this app, the session already says who's
-// connecting, `state` here is pure CSRF protection.
+// connecting, `state` here is pure CSRF protection. Nothing here needs the
+// resolved (possibly-a-profile) userId — only the callback writes data, so
+// only it calls resolveEffectiveUserId (src/lib/activeProfile.ts); the
+// active_profile_id cookie is still present when the callback runs since
+// it's a separate, longer-lived cookie from this route's own state cookie.
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -27,7 +31,12 @@ export async function GET() {
   authorizeUrl.searchParams.set("state", state);
   authorizeUrl.searchParams.set(
     "scope",
-    "pages_show_list,pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish"
+    // instagram_manage_insights is needed for post view (impressions/reach)
+    // and account-level metrics — added after the initial connect flow
+    // shipped, so anyone who connected before this needs to disconnect and
+    // reconnect once for it to apply (an existing token doesn't retroactively
+    // gain scopes), and it needs Meta App Review like the rest of these do.
+    "pages_show_list,pages_manage_posts,pages_read_engagement,instagram_basic,instagram_content_publish,instagram_manage_insights"
   );
 
   const res = NextResponse.redirect(authorizeUrl);

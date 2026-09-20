@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { encryptToken } from "@/lib/crypto/tokenCipher";
 import { exchangeCodeForToken, exchangeForLongLivedToken, MetaApiError } from "@/lib/meta/client";
+import { resolveEffectiveUserId } from "@/lib/activeProfile";
 
 const STATE_COOKIE = "meta_oauth_state";
 
@@ -12,6 +13,10 @@ export async function GET(req: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.redirect(new URL("/login", req.nextUrl.origin));
   }
+  // Resolved here (not in the connect route) so a connect started while
+  // acting as a managed client profile attaches this Meta identity to that
+  // profile, not the agency's own account.
+  const { userId } = await resolveEffectiveUserId(session.user.id);
 
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
@@ -27,9 +32,9 @@ export async function GET(req: NextRequest) {
     const { accessToken, expiresInSeconds } = await exchangeForLongLivedToken(shortLivedToken);
 
     await prisma.metaIdentity.upsert({
-      where: { userId: session.user.id },
+      where: { userId },
       create: {
-        userId: session.user.id,
+        userId,
         accessToken: encryptToken(accessToken),
         expiresAt: new Date(Date.now() + expiresInSeconds * 1000),
       },

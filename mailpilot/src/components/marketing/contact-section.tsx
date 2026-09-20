@@ -1,9 +1,6 @@
 import { Mail } from "lucide-react";
 
-// Placeholder contact address — swap in your real support email whenever
-// you're ready, same "placeholder now, real value later" approach as the
-// footer's social links.
-const CONTACT_EMAIL = "hello@example.com";
+const CONTACT_EMAIL = "contact@lynesign.com";
 
 export function ContactSection() {
   return (

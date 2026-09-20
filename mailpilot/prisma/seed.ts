@@ -39,6 +39,7 @@ const PLANS = [
     crmEnabled: false,
     aiGenerationsPerMonthLimit: 20,
     socialAccountLimit: 0,
+    profileLimit: 0,
   },
   {
     key: "starter",
@@ -52,6 +53,7 @@ const PLANS = [
     crmEnabled: false,
     aiGenerationsPerMonthLimit: 300,
     socialAccountLimit: 1,
+    profileLimit: 0,
   },
   {
     key: "pro",
@@ -65,6 +67,7 @@ const PLANS = [
     crmEnabled: true,
     aiGenerationsPerMonthLimit: -1,
     socialAccountLimit: 5,
+    profileLimit: 3,
   },
   {
     key: "agency",
@@ -78,6 +81,7 @@ const PLANS = [
     crmEnabled: true,
     aiGenerationsPerMonthLimit: -1,
     socialAccountLimit: -1,
+    profileLimit: -1,
   },
 ];
 

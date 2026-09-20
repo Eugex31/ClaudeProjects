@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ChangeEvent } from "react";
+import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
@@ -20,12 +21,14 @@ const LOGO_MAX_BYTES = 2 * 1024 * 1024;
 const LOGO_ALLOWED_TYPES = ["image/png", "image/jpeg"];
 
 export function SettingsForm() {
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [hasLogo, setHasLogo] = useState(false);
   const [logoBusy, setLogoBusy] = useState(false);
   const [logoVersion, setLogoVersion] = useState(0);
   const [connectedGmailAddress, setConnectedGmailAddress] = useState<string | null>(null);
+  const [isActingAsProfile, setIsActingAsProfile] = useState(false);
 
   const {
     register,
@@ -47,12 +50,32 @@ export function SettingsForm() {
           replyTo: settings.replyTo ?? "",
           signatureHtml: settings.signatureHtml ?? "",
           unsubscribeFooterText: settings.unsubscribeFooterText ?? "",
+          socialFacebookUrl: settings.socialFacebookUrl ?? "",
+          socialInstagramUrl: settings.socialInstagramUrl ?? "",
+          socialLinkedinUrl: settings.socialLinkedinUrl ?? "",
+          socialYoutubeUrl: settings.socialYoutubeUrl ?? "",
+          socialXUrl: settings.socialXUrl ?? "",
+          ctaDefaultLabel: settings.ctaDefaultLabel ?? "",
+          ctaDefaultUrl: settings.ctaDefaultUrl ?? "",
         });
         setHasLogo(!!settings.hasSignatureLogo);
         setConnectedGmailAddress(settings.connectedGmailAddress ?? null);
+        setIsActingAsProfile(!!settings.activeProfile);
         setLoading(false);
       });
   }, [reset]);
+
+  // Feedback for the profile-Gmail hand-rolled OAuth redirect
+  // (src/app/api/profile-gmail/callback) — mirrors how the Meta/Monday
+  // connect flows surface their own redirect outcomes.
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error === "connect_failed") toast.error("Failed to connect Gmail. Try again.");
+    if (error === "invalid_state") toast.error("Connection request expired. Try again.");
+    if (error === "email_in_use") toast.error("That Gmail account is already connected to a different account.");
+    if (searchParams.get("connected") === "1") toast.success("Gmail connected");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function onLogoSelected(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -132,10 +155,14 @@ export function SettingsForm() {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label>Sending email</Label>
-            {/* Links to this account only when the Google account's email matches
-                your login email (see auth.ts's allowDangerousEmailAccountLinking) —
-                signing in with a different Google account here signs you into that
-                other account instead of connecting it to this one. */}
+            {/* Real accounts link Google only when its email matches your login
+                email (see auth.ts's allowDangerousEmailAccountLinking) — signing
+                in with a different Google account here signs you into that other
+                account instead of connecting it to this one. While acting as a
+                managed client profile, there's no session to sign into at all, so
+                this routes through a separate hand-rolled OAuth flow instead
+                (src/app/api/profile-gmail/connect) that just links the account to
+                the active profile without touching your own login. */}
             {connectedGmailAddress ? (
               <div className="flex items-center gap-3">
                 <p className="text-sm">{connectedGmailAddress}</p>
@@ -143,7 +170,11 @@ export function SettingsForm() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => signIn("google", { callbackUrl: "/settings" })}
+                  onClick={() =>
+                    isActingAsProfile
+                      ? (window.location.href = "/api/profile-gmail/connect")
+                      : signIn("google", { callbackUrl: "/settings" })
+                  }
                 >
                   Reconnect
                 </Button>
@@ -155,7 +186,11 @@ export function SettingsForm() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => signIn("google", { callbackUrl: "/settings" })}
+                  onClick={() =>
+                    isActingAsProfile
+                      ? (window.location.href = "/api/profile-gmail/connect")
+                      : signIn("google", { callbackUrl: "/settings" })
+                  }
                 >
                   Connect Gmail
                 </Button>
@@ -249,6 +284,56 @@ export function SettingsForm() {
                 Remove logo
               </Button>
             )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Social links &amp; CTA</CardTitle>
+          <CardDescription>
+            Used by the &quot;Insert social icons&quot; and &quot;Insert CTA button&quot; actions in the email
+            editor (HTML-format bodies only). Leave any blank to skip it.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="socialFacebookUrl">Facebook page URL</Label>
+              <Input id="socialFacebookUrl" placeholder="https://facebook.com/yourpage" {...register("socialFacebookUrl")} />
+              {errors.socialFacebookUrl && <p className="text-sm text-destructive">{errors.socialFacebookUrl.message}</p>}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="socialInstagramUrl">Instagram page URL</Label>
+              <Input id="socialInstagramUrl" placeholder="https://instagram.com/yourpage" {...register("socialInstagramUrl")} />
+              {errors.socialInstagramUrl && <p className="text-sm text-destructive">{errors.socialInstagramUrl.message}</p>}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="socialLinkedinUrl">LinkedIn page URL</Label>
+              <Input id="socialLinkedinUrl" placeholder="https://linkedin.com/company/yourpage" {...register("socialLinkedinUrl")} />
+              {errors.socialLinkedinUrl && <p className="text-sm text-destructive">{errors.socialLinkedinUrl.message}</p>}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="socialYoutubeUrl">YouTube channel URL</Label>
+              <Input id="socialYoutubeUrl" placeholder="https://youtube.com/@yourchannel" {...register("socialYoutubeUrl")} />
+              {errors.socialYoutubeUrl && <p className="text-sm text-destructive">{errors.socialYoutubeUrl.message}</p>}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="socialXUrl">X (Twitter) URL</Label>
+              <Input id="socialXUrl" placeholder="https://x.com/yourhandle" {...register("socialXUrl")} />
+              {errors.socialXUrl && <p className="text-sm text-destructive">{errors.socialXUrl.message}</p>}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 border-t pt-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="ctaDefaultLabel">Default CTA button text</Label>
+              <Input id="ctaDefaultLabel" placeholder="Shop Now" {...register("ctaDefaultLabel")} />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="ctaDefaultUrl">Default CTA link</Label>
+              <Input id="ctaDefaultUrl" placeholder="https://yoursite.com" {...register("ctaDefaultUrl")} />
+              {errors.ctaDefaultUrl && <p className="text-sm text-destructive">{errors.ctaDefaultUrl.message}</p>}
+            </div>
           </div>
         </CardContent>
       </Card>

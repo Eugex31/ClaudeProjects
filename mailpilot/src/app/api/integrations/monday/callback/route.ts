@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { encryptToken } from "@/lib/crypto/tokenCipher";
 import { exchangeCodeForToken, MondayApiError } from "@/lib/monday/client";
+import { resolveEffectiveUserId } from "@/lib/activeProfile";
 
 const STATE_COOKIE = "monday_oauth_state";
 
@@ -13,6 +14,7 @@ export async function GET(req: NextRequest) {
   if (!session?.user?.id) {
     return NextResponse.redirect(new URL("/login", req.nextUrl.origin));
   }
+  const { userId } = await resolveEffectiveUserId(session.user.id);
 
   const code = req.nextUrl.searchParams.get("code");
   const state = req.nextUrl.searchParams.get("state");
@@ -27,8 +29,8 @@ export async function GET(req: NextRequest) {
     const accessToken = await exchangeCodeForToken(code, redirectUri);
 
     await prisma.mondayIntegration.upsert({
-      where: { userId: session.user.id },
-      create: { userId: session.user.id, accessToken: encryptToken(accessToken) },
+      where: { userId },
+      create: { userId, accessToken: encryptToken(accessToken) },
       // Reconnecting after a disconnect starts fresh — previous board/mapping
       // config (if somehow still present) shouldn't silently resume.
       update: {

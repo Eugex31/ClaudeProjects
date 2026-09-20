@@ -1,8 +1,8 @@
-# Email Marketing
+# LyneSign Marketing
 
 Send personalized cold email campaigns through your own Gmail account, via the official Gmail API. No SMTP passwords, no third-party mail relay — every send goes out from your connected Gmail address using OAuth.
 
-**Use this responsibly.** Email Marketing is built for legitimate, permission-based outreach. You are responsible for complying with CAN-SPAM, GDPR, and Gmail's sending policies, and for respecting Gmail's own daily sending limits (~500/day for regular Gmail accounts, ~2000/day for Workspace).
+**Use this responsibly.** LyneSign Marketing is built for legitimate, permission-based outreach. You are responsible for complying with CAN-SPAM, GDPR, and Gmail's sending policies, and for respecting Gmail's own daily sending limits (~500/day for regular Gmail accounts, ~2000/day for Workspace).
 
 ## Features
 

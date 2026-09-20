@@ -30,14 +30,14 @@ export async function POST(req: NextRequest) {
       const resetUrl = `${process.env.NEXTAUTH_URL}/reset-password?token=${token}`;
       await sendSystemEmail({
         to: email,
-        subject: "Reset your Email Marketing password",
+        subject: "Reset your LyneSign Marketing password",
         html: `<p>Click below to reset your password. This link expires in 1 hour.</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>If you didn't request this, you can ignore this email.</p>`,
         text: `Reset your password: ${resetUrl}\n\nThis link expires in 1 hour. If you didn't request this, you can ignore this email.`,
       });
     } else if (user) {
       await sendSystemEmail({
         to: email,
-        subject: "About your Email Marketing account",
+        subject: "About your LyneSign Marketing account",
         html: `<p>This account signs in with Google, so there's no password to reset. Use "Continue with Google" on the sign-in page.</p>`,
         text: `This account signs in with Google, so there's no password to reset. Use "Continue with Google" on the sign-in page.`,
       });

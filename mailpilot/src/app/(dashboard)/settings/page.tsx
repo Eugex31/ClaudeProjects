@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { SettingsForm } from "@/components/settings/settings-form";
 
 export default function SettingsPage() {
@@ -7,7 +8,9 @@ export default function SettingsPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="text-muted-foreground">Defaults applied across your campaigns.</p>
       </div>
-      <SettingsForm />
+      <Suspense>
+        <SettingsForm />
+      </Suspense>
     </div>
   );
 }

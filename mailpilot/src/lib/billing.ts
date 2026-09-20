@@ -18,7 +18,17 @@ export type EffectiveSubscription = {
 // back to Free, but keeps stripeCustomerId around so re-subscribing reuses
 // the existing Stripe customer instead of creating a duplicate.
 export async function getEffectiveSubscription(userId: string): Promise<EffectiveSubscription> {
-  const subscription = await prisma.subscription.findUnique({ where: { userId }, include: { plan: true } });
+  // A managed client profile (src/lib/activeProfile.ts) has no billing
+  // identity of its own — it inherits whichever plan its parent Pro/Agency
+  // account is on. Cheap, indexed lookup; profiles never have their own
+  // Subscription row so this just resolves which userId to bill against.
+  const profileLink = await prisma.clientProfile.findUnique({
+    where: { profileUserId: userId },
+    select: { parentUserId: true },
+  });
+  const resolvedUserId = profileLink?.parentUserId ?? userId;
+
+  const subscription = await prisma.subscription.findUnique({ where: { userId: resolvedUserId }, include: { plan: true } });
 
   if (subscription && subscription.status !== "CANCELED") {
     return {
@@ -51,7 +61,13 @@ function startOfCalendarMonthUtc(): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
 
-export type Usage = { contacts: number; emailsThisPeriod: number; aiGenerationsThisPeriod: number; socialAccounts: number };
+export type Usage = {
+  contacts: number;
+  emailsThisPeriod: number;
+  aiGenerationsThisPeriod: number;
+  socialAccounts: number;
+  profiles: number;
+};
 
 // The "period" is the customer's actual Stripe billing cycle when they have
 // one, else calendar-month-to-date for Free (which has no billing cycle to
@@ -60,15 +76,15 @@ export type Usage = { contacts: number; emailsThisPeriod: number; aiGenerationsT
 // every campaign) — a second campaign started before the first finishes has
 // to account for the first's queued sends too, or two campaigns together
 // could clear the monthly cap while each looked fine individually.
-// socialAccounts is a standing count (connections right now), not a
-// period-bounded metric like the other three — there's no "per month" for
-// how many accounts are connected.
+// socialAccounts and profiles are standing counts (right now), not
+// period-bounded metrics like the other two — there's no "per month" for how
+// many accounts are connected or how many client profiles exist.
 export async function getUsage(userId: string, subscription?: EffectiveSubscription): Promise<Usage> {
   const sub = subscription ?? (await getEffectiveSubscription(userId));
   const periodStart = toUtcDate(sub.currentPeriodStart ?? startOfCalendarMonthUtc());
   const periodEnd = toUtcDate(sub.currentPeriodEnd ?? new Date());
 
-  const [contacts, sendCounters, queuedRecipients, aiUsageCounters, socialAccounts] = await Promise.all([
+  const [contacts, sendCounters, queuedRecipients, aiUsageCounters, socialAccounts, profiles] = await Promise.all([
     prisma.contact.count({ where: { userId } }),
     prisma.sendCounter.aggregate({
       where: { userId, date: { gte: periodStart, lte: periodEnd } },
@@ -82,6 +98,7 @@ export async function getUsage(userId: string, subscription?: EffectiveSubscript
       _sum: { count: true },
     }),
     prisma.socialAccount.count({ where: { userId } }),
+    prisma.clientProfile.count({ where: { parentUserId: userId } }),
   ]);
 
   return {
@@ -89,6 +106,7 @@ export async function getUsage(userId: string, subscription?: EffectiveSubscript
     emailsThisPeriod: (sendCounters._sum.sentCount ?? 0) + queuedRecipients,
     aiGenerationsThisPeriod: aiUsageCounters._sum.count ?? 0,
     socialAccounts,
+    profiles,
   };
 }
 
@@ -190,8 +208,12 @@ export async function checkTemplateLimit(userId: string): Promise<TierLimitCheck
 // Checked before every AI generation call (src/lib/ai/generate.ts's callers).
 // Sums AiUsageCounter over the same billing-period window getUsage() uses
 // for emails — Stripe's real cycle when one exists, else calendar-month.
-// -1 on Plan.aiGenerationsPerMonthLimit means unlimited.
-export async function checkAiUsageLimit(userId: string): Promise<TierLimitCheck> {
+// -1 on Plan.aiGenerationsPerMonthLimit means unlimited. `additional`
+// (default 1) lets a caller that's about to make several generation calls
+// at once — the campaign wizard, generating up to 4 services in one
+// request — check upfront that it has headroom for all of them, rather
+// than starting and failing partway through.
+export async function checkAiUsageLimit(userId: string, additional = 1): Promise<TierLimitCheck> {
   const subscription = await getEffectiveSubscription(userId);
   const limit = subscription.plan.aiGenerationsPerMonthLimit;
   if (limit === -1) {
@@ -206,7 +228,7 @@ export async function checkAiUsageLimit(userId: string): Promise<TierLimitCheck>
   });
   const used = result._sum.count ?? 0;
 
-  if (used < limit) {
+  if (used + additional <= limit) {
     return { allowed: true };
   }
 
@@ -239,6 +261,35 @@ export async function checkSocialAccountLimit(userId: string, additional: number
     limit,
     used,
     message: `Your ${subscription.plan.name} plan allows ${limit} connected social account${limit === 1 ? "" : "s"}. Disconnect one or upgrade to connect more.`,
+  };
+}
+
+// Same shape as checkSequenceLimit/checkTemplateLimit — a flat row-count
+// against the plan's limit. Checked in POST /api/profiles. Each profile gets
+// its own full plan quota once created (getEffectiveSubscription resolves a
+// profile's own usage checks against this same plan) — this limit only caps
+// how many client profiles a Pro/Agency account can have at once, not what
+// each one can do.
+export async function checkProfileLimit(userId: string): Promise<TierLimitCheck> {
+  const subscription = await getEffectiveSubscription(userId);
+  const limit = subscription.plan.profileLimit;
+  if (limit === -1) {
+    return { allowed: true };
+  }
+
+  const used = await prisma.clientProfile.count({ where: { parentUserId: userId } });
+  if (used < limit) {
+    return { allowed: true };
+  }
+
+  return {
+    allowed: false,
+    limit,
+    used,
+    message:
+      limit === 0
+        ? `Your ${subscription.plan.name} plan doesn't include managed client profiles — upgrade to Pro or Agency to add one.`
+        : `Your ${subscription.plan.name} plan allows ${limit} managed client profile${limit === 1 ? "" : "s"}. Delete one or upgrade to add more.`,
   };
 }
 

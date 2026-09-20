@@ -27,7 +27,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Email Marketing",
+  title: "LyneSign Marketing",
   description: "Personalized cold email campaigns sent through your own Gmail account.",
   icons: { icon: "/logo.png" },
 };
