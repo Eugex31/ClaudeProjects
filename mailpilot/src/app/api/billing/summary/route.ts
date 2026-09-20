@@ -23,6 +23,8 @@ export const GET = withAuth(async (_req, { userId }) => {
     limits: {
       contactLimit: subscription.plan.contactLimit,
       emailsPerMonthLimit: subscription.plan.emailsPerMonthLimit,
+      aiGenerationsPerMonthLimit: subscription.plan.aiGenerationsPerMonthLimit,
+      socialAccountLimit: subscription.plan.socialAccountLimit,
     },
     plans,
   });

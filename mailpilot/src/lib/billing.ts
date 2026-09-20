@@ -51,7 +51,7 @@ function startOfCalendarMonthUtc(): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
 
-export type Usage = { contacts: number; emailsThisPeriod: number };
+export type Usage = { contacts: number; emailsThisPeriod: number; aiGenerationsThisPeriod: number; socialAccounts: number };
 
 // The "period" is the customer's actual Stripe billing cycle when they have
 // one, else calendar-month-to-date for Free (which has no billing cycle to
@@ -60,12 +60,15 @@ export type Usage = { contacts: number; emailsThisPeriod: number };
 // every campaign) — a second campaign started before the first finishes has
 // to account for the first's queued sends too, or two campaigns together
 // could clear the monthly cap while each looked fine individually.
+// socialAccounts is a standing count (connections right now), not a
+// period-bounded metric like the other three — there's no "per month" for
+// how many accounts are connected.
 export async function getUsage(userId: string, subscription?: EffectiveSubscription): Promise<Usage> {
   const sub = subscription ?? (await getEffectiveSubscription(userId));
   const periodStart = toUtcDate(sub.currentPeriodStart ?? startOfCalendarMonthUtc());
   const periodEnd = toUtcDate(sub.currentPeriodEnd ?? new Date());
 
-  const [contacts, sendCounters, queuedRecipients] = await Promise.all([
+  const [contacts, sendCounters, queuedRecipients, aiUsageCounters, socialAccounts] = await Promise.all([
     prisma.contact.count({ where: { userId } }),
     prisma.sendCounter.aggregate({
       where: { userId, date: { gte: periodStart, lte: periodEnd } },
@@ -74,11 +77,18 @@ export async function getUsage(userId: string, subscription?: EffectiveSubscript
     prisma.campaignRecipient.count({
       where: { status: { in: ["PENDING", "RETRYING", "SENDING"] }, campaign: { userId } },
     }),
+    prisma.aiUsageCounter.aggregate({
+      where: { userId, date: { gte: periodStart, lte: periodEnd } },
+      _sum: { count: true },
+    }),
+    prisma.socialAccount.count({ where: { userId } }),
   ]);
 
   return {
     contacts,
     emailsThisPeriod: (sendCounters._sum.sentCount ?? 0) + queuedRecipients,
+    aiGenerationsThisPeriod: aiUsageCounters._sum.count ?? 0,
+    socialAccounts,
   };
 }
 
@@ -174,6 +184,61 @@ export async function checkTemplateLimit(userId: string): Promise<TierLimitCheck
     limit,
     used,
     message: `Your ${subscription.plan.name} plan allows ${limit} saved template${limit === 1 ? "" : "s"}. Delete one or upgrade to save more.`,
+  };
+}
+
+// Checked before every AI generation call (src/lib/ai/generate.ts's callers).
+// Sums AiUsageCounter over the same billing-period window getUsage() uses
+// for emails — Stripe's real cycle when one exists, else calendar-month.
+// -1 on Plan.aiGenerationsPerMonthLimit means unlimited.
+export async function checkAiUsageLimit(userId: string): Promise<TierLimitCheck> {
+  const subscription = await getEffectiveSubscription(userId);
+  const limit = subscription.plan.aiGenerationsPerMonthLimit;
+  if (limit === -1) {
+    return { allowed: true };
+  }
+
+  const periodStart = toUtcDate(subscription.currentPeriodStart ?? startOfCalendarMonthUtc());
+  const periodEnd = toUtcDate(subscription.currentPeriodEnd ?? new Date());
+  const result = await prisma.aiUsageCounter.aggregate({
+    where: { userId, date: { gte: periodStart, lte: periodEnd } },
+    _sum: { count: true },
+  });
+  const used = result._sum.count ?? 0;
+
+  if (used < limit) {
+    return { allowed: true };
+  }
+
+  return {
+    allowed: false,
+    limit,
+    used,
+    message: `Your ${subscription.plan.name} plan allows ${limit.toLocaleString()} AI generations this billing period. Upgrade for more.`,
+  };
+}
+
+// Same shape as checkSequenceLimit/checkTemplateLimit — a flat row-count
+// against the plan's limit. Checked in POST /api/social/meta/pages/activate
+// (for the net-new accounts being added), never at Facebook-login time,
+// since logging in with Facebook creates no SocialAccount rows by itself.
+export async function checkSocialAccountLimit(userId: string, additional: number): Promise<TierLimitCheck> {
+  const subscription = await getEffectiveSubscription(userId);
+  const limit = subscription.plan.socialAccountLimit;
+  if (limit === -1) {
+    return { allowed: true };
+  }
+
+  const used = await prisma.socialAccount.count({ where: { userId } });
+  if (used + additional <= limit) {
+    return { allowed: true };
+  }
+
+  return {
+    allowed: false,
+    limit,
+    used,
+    message: `Your ${subscription.plan.name} plan allows ${limit} connected social account${limit === 1 ? "" : "s"}. Disconnect one or upgrade to connect more.`,
   };
 }
 

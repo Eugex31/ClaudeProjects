@@ -36,9 +36,20 @@ export async function buildMime(input: MimeMessageInput): Promise<string> {
     headers: input.listUnsubscribe
       ? [{ key: "List-Unsubscribe", value: `<${input.listUnsubscribe}>` }]
       : undefined,
+    // filename: false (not omitted — nodemailer's MailComposer synthesizes
+    // one from the content type whenever `filename` is falsy-but-not-exactly-
+    // `false`) is the one thing that actually matters here. Every attachment
+    // this app ever builds is a cid-referenced inline image (the logo, a
+    // social icon), never a real file meant to be downloaded, and
+    // nodemailer's own getAttachments() already infers
+    // `Content-Disposition: inline` correctly for an image with a cid with
+    // no help needed — that was never the problem. Gmail's inbox and message
+    // header show a separate downloadable chip (e.g. "logo.png") for ANY MIME
+    // part carrying a filename, regardless of what Content-Disposition says.
+    // Suppressing the filename entirely is what actually stops the chip.
     attachments: input.attachments?.map((a) => ({
       cid: a.cid,
-      filename: a.filename,
+      filename: false as const,
       contentType: a.contentType,
       content: a.content,
     })),

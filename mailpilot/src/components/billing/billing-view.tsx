@@ -23,6 +23,10 @@ type Plan = {
   monthlyPriceCents: number;
   contactLimit: number;
   emailsPerMonthLimit: number;
+  activeSequenceLimit: number;
+  templateLimit: number;
+  aiGenerationsPerMonthLimit: number;
+  socialAccountLimit: number;
   crmEnabled: boolean;
 };
 
@@ -35,10 +39,20 @@ type Summary = {
     cancelAtPeriodEnd: boolean;
     hasStripeCustomer: boolean;
   };
-  usage: { contacts: number; emailsThisPeriod: number };
-  limits: { contactLimit: number; emailsPerMonthLimit: number };
+  usage: { contacts: number; emailsThisPeriod: number; aiGenerationsThisPeriod: number; socialAccounts: number };
+  limits: {
+    contactLimit: number;
+    emailsPerMonthLimit: number;
+    aiGenerationsPerMonthLimit: number;
+    socialAccountLimit: number;
+  };
   plans: Plan[];
 };
+
+// -1 is the "unlimited" sentinel used across every Plan limit field.
+function formatLimit(limit: number): string {
+  return limit === -1 ? "Unlimited" : limit.toLocaleString();
+}
 
 type Invoice = {
   id: string;
@@ -112,6 +126,12 @@ export function BillingView() {
   const contactsPct = limits.contactLimit > 0 ? Math.min(100, (usage.contacts / limits.contactLimit) * 100) : 0;
   const emailsPct =
     limits.emailsPerMonthLimit > 0 ? Math.min(100, (usage.emailsThisPeriod / limits.emailsPerMonthLimit) * 100) : 0;
+  const aiPct =
+    limits.aiGenerationsPerMonthLimit > 0
+      ? Math.min(100, (usage.aiGenerationsThisPeriod / limits.aiGenerationsPerMonthLimit) * 100)
+      : 0;
+  const socialPct =
+    limits.socialAccountLimit > 0 ? Math.min(100, (usage.socialAccounts / limits.socialAccountLimit) * 100) : 0;
 
   return (
     <div className="flex max-w-3xl flex-col gap-6">
@@ -157,6 +177,24 @@ export function BillingView() {
             </div>
             <Progress value={emailsPct} />
           </div>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-between text-sm">
+              <span>AI generations this period</span>
+              <span className="text-muted-foreground">
+                {usage.aiGenerationsThisPeriod.toLocaleString()} / {formatLimit(limits.aiGenerationsPerMonthLimit)}
+              </span>
+            </div>
+            {limits.aiGenerationsPerMonthLimit > 0 && <Progress value={aiPct} />}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-between text-sm">
+              <span>Connected social accounts</span>
+              <span className="text-muted-foreground">
+                {usage.socialAccounts.toLocaleString()} / {formatLimit(limits.socialAccountLimit)}
+              </span>
+            </div>
+            {limits.socialAccountLimit > 0 && <Progress value={socialPct} />}
+          </div>
         </CardContent>
       </Card>
 
@@ -179,6 +217,14 @@ export function BillingView() {
                   {plan.contactLimit.toLocaleString()} contacts
                   <br />
                   {plan.emailsPerMonthLimit.toLocaleString()} emails/mo
+                  <br />
+                  {formatLimit(plan.activeSequenceLimit)} active sequence{plan.activeSequenceLimit === 1 ? "" : "s"}
+                  <br />
+                  {formatLimit(plan.templateLimit)} saved templates
+                  <br />
+                  {formatLimit(plan.aiGenerationsPerMonthLimit)} AI generations/mo
+                  <br />
+                  {plan.socialAccountLimit === 0 ? "No social accounts" : `${formatLimit(plan.socialAccountLimit)} social accounts`}
                   <br />
                   {plan.crmEnabled ? "CRM sync included" : "No CRM sync"}
                 </p>

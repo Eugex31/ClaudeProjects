@@ -24,11 +24,11 @@ export default async function RootPage() {
         <section className="mx-auto flex max-w-6xl flex-col items-center gap-10 px-4 pt-16 pb-8 text-center">
           <div className="flex flex-col gap-4">
             <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
-              Cold email that actually gets sent
+              AI-powered email and social marketing, in one place
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">
-              Automation sequences, templates, segmentation, and reporting — all sending through your own
-              Gmail account, not a shared domain your recipients don&apos;t recognize.
+              Generate content with your own AI key, send email that actually reaches the inbox through
+              your own Gmail account, and schedule posts to Facebook and Instagram — all from one dashboard.
             </p>
           </div>
           <div className="flex items-center gap-3">

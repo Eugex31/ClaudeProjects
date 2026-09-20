@@ -37,39 +37,47 @@ const PLANS = [
     activeSequenceLimit: 1,
     templateLimit: 5,
     crmEnabled: false,
+    aiGenerationsPerMonthLimit: 20,
+    socialAccountLimit: 0,
   },
   {
     key: "starter",
     name: "Starter",
-    monthlyPriceCents: 2900,
+    monthlyPriceCents: 3900,
     stripePriceId: process.env.STRIPE_PRICE_STARTER ?? null,
     contactLimit: 1000,
     emailsPerMonthLimit: 2000,
     activeSequenceLimit: 3,
     templateLimit: 20,
     crmEnabled: false,
+    aiGenerationsPerMonthLimit: 300,
+    socialAccountLimit: 1,
   },
   {
     key: "pro",
     name: "Pro",
-    monthlyPriceCents: 7900,
+    monthlyPriceCents: 9900,
     stripePriceId: process.env.STRIPE_PRICE_PRO ?? null,
     contactLimit: 10000,
     emailsPerMonthLimit: 20000,
     activeSequenceLimit: -1,
     templateLimit: -1,
     crmEnabled: true,
+    aiGenerationsPerMonthLimit: -1,
+    socialAccountLimit: 5,
   },
   {
     key: "agency",
     name: "Agency",
-    monthlyPriceCents: 19900,
+    monthlyPriceCents: 24900,
     stripePriceId: process.env.STRIPE_PRICE_AGENCY ?? null,
     contactLimit: 50000,
     emailsPerMonthLimit: 100000,
     activeSequenceLimit: -1,
     templateLimit: -1,
     crmEnabled: true,
+    aiGenerationsPerMonthLimit: -1,
+    socialAccountLimit: -1,
   },
 ];
 
@@ -415,7 +423,7 @@ const STARTER_TEMPLATES = [
                align="center" bgcolor="#DDA974" role="presentation" style="border:none;border-radius:10px;cursor:auto;mso-padding-alt:10px 25px;background:#DDA974;" valign="middle"
             >
               <a
-                 href="https://lynesign.com/solutions/geofencing/" style="display:inline-block;background:#DDA974;color:#FFFFFF;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;font-weight:700;line-height:120%;letter-spacing:0.5px;margin:0;text-decoration:none;text-transform:uppercase;padding:10px 25px;mso-padding-alt:0px;border-radius:10px;" target="_blank"
+                 href="https://lynesign.com/landing/#final-cta" style="display:inline-block;background:#DDA974;color:#FFFFFF;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;font-weight:700;line-height:120%;letter-spacing:0.5px;margin:0;text-decoration:none;text-transform:uppercase;padding:10px 25px;mso-padding-alt:0px;border-radius:10px;" target="_blank"
               >
                 Get Started
               </a>
@@ -496,7 +504,7 @@ const STARTER_TEMPLATES = [
                   
       <div
          style="font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;line-height:1;text-align:left;color:#666666;"
-      >Need help? <a href="https://lynesign.com/landing/#final-cta" style="color:#DDA974;font-weight:700;text-decoration:none;">Contact support</a></div>
+      >Need help? <a href="https://lynesign.com/contact-us/#" style="color:#DDA974;font-weight:700;text-decoration:none;">Contact support</a></div>
     
                 </td>
               </tr>
@@ -639,7 +647,7 @@ const STARTER_TEMPLATES = [
                align="center" bgcolor="#DDA974" role="presentation" style="border:none;border-radius:10px;cursor:auto;mso-padding-alt:10px 25px;background:#DDA974;" valign="middle"
             >
               <a
-                 href="https://lynesign.com/solutions/geofencing/" style="display:inline-block;background:#DDA974;color:#FFFFFF;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;font-weight:700;line-height:120%;letter-spacing:0.5px;margin:0;text-decoration:none;text-transform:uppercase;padding:10px 25px;mso-padding-alt:0px;border-radius:10px;" target="_blank"
+                 href="https://lynesign.com/landing/#final-cta" style="display:inline-block;background:#DDA974;color:#FFFFFF;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;font-weight:700;line-height:120%;letter-spacing:0.5px;margin:0;text-decoration:none;text-transform:uppercase;padding:10px 25px;mso-padding-alt:0px;border-radius:10px;" target="_blank"
               >
                 Get Started
               </a>
@@ -826,7 +834,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.facebook.com/LyneSign" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.facebook}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.facebook}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -860,7 +868,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.linkedin.com/company/lynesign/" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.linkedin}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.linkedin}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -894,7 +902,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.instagram.com/lynesign/" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.instagram}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.instagram}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -928,7 +936,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.youtube.com/@LyneSignLLC" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.youtube}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.youtube}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -2311,7 +2319,7 @@ const STARTER_TEMPLATES = [
                align="center" bgcolor="#DDA974" role="presentation" style="border:none;border-radius:10px;cursor:auto;mso-padding-alt:10px 25px;background:#DDA974;" valign="middle"
             >
               <a
-                 href="https://lynesign.com/screen-advertising/" style="display:inline-block;background:#DDA974;color:#FFFFFF;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;font-weight:700;line-height:120%;letter-spacing:0.5px;margin:0;text-decoration:none;text-transform:uppercase;padding:10px 25px;mso-padding-alt:0px;border-radius:10px;" target="_blank"
+                 href="https://lynesign.com/landing/#final-cta" style="display:inline-block;background:#DDA974;color:#FFFFFF;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;font-weight:700;line-height:120%;letter-spacing:0.5px;margin:0;text-decoration:none;text-transform:uppercase;padding:10px 25px;mso-padding-alt:0px;border-radius:10px;" target="_blank"
               >
                 Get Started
               </a>
@@ -2380,7 +2388,7 @@ const STARTER_TEMPLATES = [
                   
       <div
          style="font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;line-height:1;text-align:left;color:#666666;"
-      >Need help? <a href="https://lynesign.com/landing/#final-cta" style="color:#DDA974;font-weight:700;text-decoration:none;">Contact support</a></div>
+      >Need help? <a href="https://lynesign.com/contact-us/#" style="color:#DDA974;font-weight:700;text-decoration:none;">Contact support</a></div>
     
                 </td>
               </tr>
@@ -2510,7 +2518,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.facebook.com/LyneSign" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.facebook}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.facebook}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -2544,7 +2552,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.linkedin.com/company/lynesign/" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.linkedin}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.linkedin}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -2578,7 +2586,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.instagram.com/lynesign/" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.instagram}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.instagram}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -2612,7 +2620,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.youtube.com/@LyneSignLLC" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.youtube}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.youtube}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -2981,7 +2989,7 @@ const STARTER_TEMPLATES = [
                   
       <div
          style="font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;line-height:1;text-align:left;color:#666666;"
-      >Need help? <a href="https://lynesign.com/landing/#final-cta" style="color:#DDA974;font-weight:700;text-decoration:none;">Contact support</a></div>
+      >Need help? <a href="https://lynesign.com/contact-us/#" style="color:#DDA974;font-weight:700;text-decoration:none;">Contact support</a></div>
     
                 </td>
               </tr>
@@ -3222,7 +3230,7 @@ const STARTER_TEMPLATES = [
                align="center" bgcolor="#DDA974" role="presentation" style="border:none;border-radius:10px;cursor:auto;mso-padding-alt:10px 25px;background:#DDA974;" valign="middle"
             >
               <a
-                 href="https://lynesign.com/google-business-profile/" style="display:inline-block;background:#DDA974;color:#FFFFFF;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;font-weight:700;line-height:120%;letter-spacing:0.5px;margin:0;text-decoration:none;text-transform:uppercase;padding:10px 25px;mso-padding-alt:0px;border-radius:10px;" target="_blank"
+                 href="https://lynesign.com/landing/#final-cta" style="display:inline-block;background:#DDA974;color:#FFFFFF;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;font-weight:700;line-height:120%;letter-spacing:0.5px;margin:0;text-decoration:none;text-transform:uppercase;padding:10px 25px;mso-padding-alt:0px;border-radius:10px;" target="_blank"
               >
                 Get Started
               </a>
@@ -3409,7 +3417,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.facebook.com/LyneSign" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.facebook}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.facebook}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -3443,7 +3451,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.linkedin.com/company/lynesign/" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.linkedin}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.linkedin}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -3477,7 +3485,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.instagram.com/lynesign/" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.instagram}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.instagram}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -3511,7 +3519,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.youtube.com/@LyneSignLLC" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.youtube}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.youtube}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -3923,7 +3931,7 @@ const STARTER_TEMPLATES = [
                   
       <div
          style="font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;line-height:1;text-align:left;color:#666666;"
-      ><a href="https://lynesign.com/landing/#final-cta" style="color:#DDA974;font-weight:700;text-decoration:none;">Need help? Contact support</a></div>
+      ><a href="https://lynesign.com/contact-us/#" style="color:#DDA974;font-weight:700;text-decoration:none;">Need help? Contact support</a></div>
     
                 </td>
               </tr>
@@ -4165,7 +4173,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.facebook.com/LyneSign" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.facebook}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.facebook}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -4199,7 +4207,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.linkedin.com/company/lynesign/" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.linkedin}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.linkedin}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -4233,7 +4241,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.instagram.com/lynesign/" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.instagram}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.instagram}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -4267,7 +4275,7 @@ const STARTER_TEMPLATES = [
                 <td  style="font-size:0;height:32px;vertical-align:middle;width:32px;">
                   <a  href="https://www.youtube.com/@LyneSignLLC" target="_blank">
                     <img
-                       alt="" src="${SOCIAL_ICON_URLS.youtube}" style="border:0;border-radius:16px;display:block;" width="32"
+                       alt="" src="${SOCIAL_ICON_URLS.youtube}" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" width="18"
                     />
                   </a>
                 </td>
@@ -4573,7 +4581,7 @@ const STARTER_TEMPLATES = [
                   </td>
                 </tr>
               </table>
-              <h1 class="hero-heading" style="margin:0;font-family:Ubuntu,Helvetica,Arial,sans-serif;font-size:26px;line-height:1.3;font-weight:700;color:#FFFFFF;">
+              <h1 class="hero-heading" style="margin:0;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:26px;line-height:1.3;font-weight:700;color:#FFFFFF;">
                 Get Seen Where It Matters Most
               </h1>
             </td>
@@ -4582,17 +4590,17 @@ const STARTER_TEMPLATES = [
           <!-- 3. Body -->
           <tr>
             <td class="mobile-pad" style="padding:40px 40px 8px 40px;background-color:#FFFFFF;">
-              <p style="margin:0 0 16px 0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+              <p style="margin:0 0 16px 0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:15px;line-height:1.6;color:#666666;">
                 Hi {{first_name}},
               </p>
-              <p style="margin:0 0 16px 0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+              <p style="margin:0 0 16px 0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:15px;line-height:1.6;color:#666666;">
                 LyneSign puts your brand on indoor digital billboards across Houston — the screens your customers are already looking at while they eat, shop, wait, and play. Every display is strategically placed to deliver vibrant, memorable visuals to a captive, local audience.
               </p>
-              <p style="margin:0 0 20px 0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+              <p style="margin:0 0 20px 0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:15px;line-height:1.6;color:#666666;">
                 <strong style="color:#062A43;">400%</strong> more impactful than static advertising. <strong style="color:#062A43;">33%</strong> increase in average ticket value. <strong style="color:#062A43;">83%</strong> recall among consumers.
               </p>
-              <p style="margin:0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:#666666;">
-                Need help? <a href="https://lynesign.com/landing/#final-cta" style="color:#DDA974;font-weight:700;text-decoration:none;">Contact support</a>
+              <p style="margin:0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;color:#666666;">
+                Need help? <a href="https://lynesign.com/contact-us/#" style="color:#DDA974;font-weight:700;text-decoration:none;">Contact support</a>
               </p>
             </td>
           </tr>
@@ -4607,7 +4615,7 @@ const STARTER_TEMPLATES = [
           <!-- 5. Sign-off -->
           <tr>
             <td class="mobile-pad" style="padding:24px 40px 40px 40px;background-color:#FFFFFF;">
-              <p style="margin:0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+              <p style="margin:0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:15px;line-height:1.6;color:#666666;">
                 Thank you,<br>
                 The LyneSign Team
               </p>
@@ -4617,10 +4625,10 @@ const STARTER_TEMPLATES = [
           <!-- 6. Contact band -->
           <tr>
             <td align="center" class="mobile-pad" style="padding:32px 40px;background-color:#F4F4F4;">
-              <p style="margin:0 0 8px 0;font-family:Ubuntu,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;color:#062A43;">
+              <p style="margin:0 0 8px 0;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:700;color:#062A43;">
                 Get in touch
               </p>
-              <p style="margin:0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;">
+              <p style="margin:0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;">
                 <a href="mailto:contact@lynesign.com" style="color:#062A43;text-decoration:underline;">contact@lynesign.com</a>
               </p>
             </td>
@@ -4651,7 +4659,7 @@ const STARTER_TEMPLATES = [
           <!-- 8. Footer bar -->
           <tr>
             <td align="center" style="padding:20px 40px;background-color:#062A43;">
-              <p style="margin:0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#C7CDD9;">
+              <p style="margin:0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:12px;line-height:1.6;color:#C7CDD9;">
                 &copy; 2026 LyneSign. All rights reserved.
               </p>
             </td>
@@ -4730,13 +4738,13 @@ const STARTER_TEMPLATES = [
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td align="center" style="padding-bottom:14px;">
-                    <p style="margin:0;font-family:Ubuntu,Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#DDA974;">
+                    <p style="margin:0;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#DDA974;">
                       Indoor Digital Billboard Network &middot; Houston, TX
                     </p>
                   </td>
                 </tr>
               </table>
-              <h1 class="hero-heading" style="margin:0;font-family:Ubuntu,Helvetica,Arial,sans-serif;font-size:28px;line-height:1.3;font-weight:700;color:#FFFFFF;">
+              <h1 class="hero-heading" style="margin:0;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:28px;line-height:1.3;font-weight:700;color:#FFFFFF;">
                 Be Seen Where Your Customers Already Are
               </h1>
             </td>
@@ -4745,13 +4753,13 @@ const STARTER_TEMPLATES = [
           <!-- 3. Body intro -->
           <tr>
             <td class="mobile-pad" style="padding:40px 40px 8px 40px;background-color:#FFFFFF;">
-              <p style="margin:0 0 16px 0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+              <p style="margin:0 0 16px 0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:15px;line-height:1.6;color:#666666;">
                 Hi {{first_name}},
               </p>
-              <p style="margin:0 0 16px 0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+              <p style="margin:0 0 16px 0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:15px;line-height:1.6;color:#666666;">
                 LyneSign is Houston's indoor digital billboard network — full-motion advertising playing on real screens inside the local businesses your customers already spend time in. Not a few seconds glimpsed from a car window, but minutes spent waiting, browsing, or working out, with your brand right in front of them.
               </p>
-              <ul style="margin:0;padding-left:20px;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+              <ul style="margin:0;padding-left:20px;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:15px;line-height:1.6;color:#666666;">
                 <li style="margin:0 0 6px 0;"><strong style="color:#062A43;">20+</strong> screens live across Texas</li>
                 <li style="margin:0 0 6px 0;"><strong style="color:#062A43;">49+</strong> minute average dwell time</li>
                 <li style="margin:0;"><strong style="color:#062A43;">Houston</strong> locations available now</li>
@@ -4762,7 +4770,7 @@ const STARTER_TEMPLATES = [
           <!-- 4. Mosaic -->
           <tr>
             <td class="mobile-pad" style="padding:28px 40px 8px 40px;background-color:#FFFFFF;">
-              <p style="margin:0 0 16px 0;font-family:Ubuntu,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;color:#062A43;">
+              <p style="margin:0 0 16px 0;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:700;color:#062A43;">
                 Real LyneSign Screens, Inside Real Texas Businesses
               </p>
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -4795,16 +4803,16 @@ const STARTER_TEMPLATES = [
           <!-- 5. CTA band -->
           <tr>
             <td align="center" class="mobile-pad" style="padding:32px 40px;background-color:#062A43;">
-              <p style="margin:0 0 4px 0;font-family:Ubuntu,Helvetica,Arial,sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#DDA974;">
+              <p style="margin:0 0 4px 0;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#DDA974;">
                 Ready When You Are
               </p>
-              <p style="margin:0 0 20px 0;font-family:Ubuntu,Helvetica,Arial,sans-serif;font-size:20px;font-weight:700;color:#FFFFFF;">
+              <p style="margin:0 0 20px 0;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:20px;font-weight:700;color:#FFFFFF;">
                 Put your brand on screens across Houston
               </p>
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
                 <tr>
                   <td align="center" style="background-color:#DDA974;border-radius:8px;">
-                    <a href="https://lynesign.com/landing/" target="_blank" style="display:inline-block;padding:14px 36px;font-family:Ubuntu,Helvetica,Arial,sans-serif;font-size:14px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:8px;">
+                    <a href="https://lynesign.com/landing/#final-cta" target="_blank" style="display:inline-block;padding:14px 36px;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:8px;">
                       Start Today
                     </a>
                   </td>
@@ -4816,7 +4824,7 @@ const STARTER_TEMPLATES = [
           <!-- 6. Sign-off -->
           <tr>
             <td class="mobile-pad" style="padding:24px 40px 40px 40px;background-color:#FFFFFF;">
-              <p style="margin:0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+              <p style="margin:0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:15px;line-height:1.6;color:#666666;">
                 Thank you,<br>
                 The LyneSign Team
               </p>
@@ -4826,10 +4834,10 @@ const STARTER_TEMPLATES = [
           <!-- 7. Contact band -->
           <tr>
             <td align="center" class="mobile-pad" style="padding:32px 40px;background-color:#F4F4F4;">
-              <p style="margin:0 0 8px 0;font-family:Ubuntu,Helvetica,Arial,sans-serif;font-size:16px;font-weight:700;color:#062A43;">
+              <p style="margin:0 0 8px 0;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:700;color:#062A43;">
                 Get in touch
               </p>
-              <p style="margin:0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;">
+              <p style="margin:0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;">
                 <a href="mailto:contact@lynesign.com" style="color:#062A43;text-decoration:underline;">contact@lynesign.com</a>
               </p>
             </td>
@@ -4860,7 +4868,181 @@ const STARTER_TEMPLATES = [
           <!-- 9. Footer bar -->
           <tr>
             <td align="center" style="padding:20px 40px;background-color:#062A43;">
-              <p style="margin:0;font-family:Montserrat,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.6;color:#C7CDD9;">
+              <p style="margin:0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:12px;line-height:1.6;color:#C7CDD9;">
+                &copy; 2026 LyneSign. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
+  },
+  {
+    // A short, single-focus pitch template built around two real venue
+    // photos already hosted under public/mosaic-*.jpg (extracted from
+    // lynesign.com/landing/ and proxy-exempted for the Houston intro
+    // template above, reused here rather than sourcing new images). Where
+    // the intro template above educates, this one is a direct ask, one
+    // headline, one hero photo, one CTA, matching the shorter cold-outreach
+    // format real advertisers respond to on a first touch.
+    key: "business_lynesign_advertise_here",
+    categoryKey: "business_general",
+    sortOrder: 7,
+    name: "Advertise Here — Where Your Customers Are",
+    subject: "Advertise Here, Where Your Customers Are",
+    bodyFormat: "HTML" as const,
+    body: `<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="color-scheme" content="light">
+<meta name="supported-color-schemes" content="light">
+<title>LyneSign</title>
+<style>
+  body, table, td { -ms-text-size-adjust: 100%; -webkit-text-size-adjust: 100%; }
+  table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+  img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+  body { margin: 0; padding: 0; width: 100% !important; background-color: #F4F4F4; }
+
+  @media only screen and (max-width: 600px) {
+    .email-container { width: 100% !important; max-width: 100% !important; }
+    .mobile-pad { padding-left: 24px !important; padding-right: 24px !important; }
+    .hero-heading { font-size: 26px !important; }
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;background-color:#F4F4F4;">
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;line-height:1px;color:#F4F4F4;">
+    Your ad, playing on a real screen inside the local businesses your customers already visit.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F4F4F4;">
+    <tr>
+      <td align="center" style="padding:24px 16px;">
+
+        <table role="presentation" class="email-container" width="600" cellpadding="0" cellspacing="0" border="0" align="center" style="width:600px;max-width:600px;background-color:#FFFFFF;">
+
+          <!-- 1. Header -->
+          <tr>
+            <td align="center" class="mobile-pad" style="padding:32px 40px 24px 40px;background-color:#FFFFFF;">
+              <img src="${LOGO_URL}" width="160" alt="LyneSign" style="display:block;border:0;width:160px;max-width:100%;">
+            </td>
+          </tr>
+
+          <!-- 2. Hero photo -->
+          <tr>
+            <td align="center" style="background-color:#FFFFFF;">
+              <img src="${APP_BASE_URL}/mosaic-blink-fitness.jpg" width="600" alt="A real LyneSign screen playing inside a busy Houston gym" style="display:block;width:100%;max-width:600px;">
+            </td>
+          </tr>
+
+          <!-- 3. Headline band -->
+          <tr>
+            <td align="center" class="mobile-pad" style="padding:36px 40px;background-color:#062A43;">
+              <p style="margin:0 0 10px 0;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#DDA974;">
+                Indoor Digital Billboard Network
+              </p>
+              <h1 class="hero-heading" style="margin:0;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:30px;line-height:1.25;font-weight:700;color:#FFFFFF;">
+                Advertise Here, Where Your Customers Are
+              </h1>
+            </td>
+          </tr>
+
+          <!-- 4. Body -->
+          <tr>
+            <td class="mobile-pad" style="padding:40px 40px 8px 40px;background-color:#FFFFFF;">
+              <p style="margin:0 0 16px 0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+                Hi {{first_name}},
+              </p>
+              <p style="margin:0 0 16px 0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+                This is a real LyneSign screen, playing inside a real Houston business right now. Your customers are already spending time in local shops, restaurants, and gyms just like this one, with minutes to see and remember your message instead of a few seconds glancing out a car window.
+              </p>
+              <p style="margin:0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+                One of these screens could be playing your ad this month.
+              </p>
+            </td>
+          </tr>
+
+          <!-- 5. Second real photo -->
+          <tr>
+            <td align="center" class="mobile-pad" style="padding:8px 40px 8px 40px;background-color:#FFFFFF;">
+              <img src="${APP_BASE_URL}/mosaic-convenience-store.jpg" width="520" alt="A real LyneSign screen playing inside a Houston convenience store" style="display:block;width:100%;max-width:520px;border-radius:12px;">
+            </td>
+          </tr>
+
+          <!-- 6. CTA band -->
+          <tr>
+            <td align="center" class="mobile-pad" style="padding:32px 40px;background-color:#062A43;">
+              <p style="margin:0 0 20px 0;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:18px;font-weight:700;color:#FFFFFF;">
+                Ready to put your brand on screens across Houston?
+              </p>
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+                <tr>
+                  <td align="center" style="background-color:#DDA974;border-radius:8px;">
+                    <a href="https://lynesign.com/landing/#final-cta" target="_blank" style="display:inline-block;padding:14px 36px;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:14px;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#FFFFFF;text-decoration:none;border-radius:8px;">
+                      Start Today
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- 7. Sign-off -->
+          <tr>
+            <td class="mobile-pad" style="padding:24px 40px 40px 40px;background-color:#FFFFFF;">
+              <p style="margin:0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:15px;line-height:1.6;color:#666666;">
+                Thank you,<br>
+                The LyneSign Team
+              </p>
+            </td>
+          </tr>
+
+          <!-- 8. Contact band -->
+          <tr>
+            <td align="center" class="mobile-pad" style="padding:32px 40px;background-color:#F4F4F4;">
+              <p style="margin:0 0 8px 0;font-family:Ubuntu, Helvetica, Arial, sans-serif;font-size:16px;font-weight:700;color:#062A43;">
+                Get in touch
+              </p>
+              <p style="margin:0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:14px;line-height:1.6;">
+                <a href="mailto:contact@lynesign.com" style="color:#062A43;text-decoration:underline;">contact@lynesign.com</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- 9. Social icons row -->
+          <tr>
+            <td align="center" class="mobile-pad" style="padding:24px 40px;background-color:#FFFFFF;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="padding:0 6px;">
+                    <a href="https://www.facebook.com/LyneSign" target="_blank" style="display:inline-block;width:32px;height:32px;line-height:32px;border-radius:16px;background-color:#1877F2;text-decoration:none;"><img src="${SOCIAL_ICON_URLS.facebook}" width="18" height="18" alt="Facebook" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" /></a>
+                  </td>
+                  <td style="padding:0 6px;">
+                    <a href="https://www.linkedin.com/company/lynesign/" target="_blank" style="display:inline-block;width:32px;height:32px;line-height:32px;border-radius:16px;background-color:#0A66C2;text-decoration:none;"><img src="${SOCIAL_ICON_URLS.linkedin}" width="18" height="18" alt="LinkedIn" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" /></a>
+                  </td>
+                  <td style="padding:0 6px;">
+                    <a href="https://www.instagram.com/lynesign/" target="_blank" style="display:inline-block;width:32px;height:32px;line-height:32px;border-radius:16px;background-color:#E4405F;text-decoration:none;"><img src="${SOCIAL_ICON_URLS.instagram}" width="18" height="18" alt="Instagram" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" /></a>
+                  </td>
+                  <td style="padding:0 6px;">
+                    <a href="https://www.youtube.com/@LyneSignLLC" target="_blank" style="display:inline-block;width:32px;height:32px;line-height:32px;border-radius:16px;background-color:#FF0000;text-decoration:none;"><img src="${SOCIAL_ICON_URLS.youtube}" width="18" height="18" alt="YouTube" style="display:block;width:18px;height:18px;margin:7px auto 0 auto;border:0" /></a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- 10. Footer bar -->
+          <tr>
+            <td align="center" style="padding:20px 40px;background-color:#062A43;">
+              <p style="margin:0;font-family:Montserrat, Helvetica, Arial, sans-serif;font-size:12px;line-height:1.6;color:#C7CDD9;">
                 &copy; 2026 LyneSign. All rights reserved.
               </p>
             </td>

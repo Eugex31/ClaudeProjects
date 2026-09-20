@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Send, FileText, Workflow, Mail, BarChart3, Plug, ScrollText, Settings, CreditCard } from "lucide-react";
+import { LayoutDashboard, Users, Send, FileText, Workflow, Mail, BarChart3, Plug, ScrollText, Settings, CreditCard, Sparkles, Share2 } from "lucide-react";
 
 // Grouped by what a customer is actually doing — the sending workflow
 // they're in day to day vs. account/admin concerns they visit occasionally.
@@ -18,12 +18,14 @@ const NAV_GROUPS = [
       { href: "/sequences", label: "Sequences", icon: Workflow },
       { href: "/templates", label: "Templates", icon: FileText },
       { href: "/newsletters", label: "Newsletters", icon: Mail },
+      { href: "/social", label: "Social", icon: Share2 },
       { href: "/reports", label: "Reports", icon: BarChart3 },
     ],
   },
   {
     label: "Account",
     items: [
+      { href: "/ai-connections", label: "AI Connections", icon: Sparkles },
       { href: "/integrations", label: "Integrations", icon: Plug },
       { href: "/logs", label: "Logs", icon: ScrollText },
       { href: "/billing", label: "Billing", icon: CreditCard },

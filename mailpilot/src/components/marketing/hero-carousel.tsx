@@ -1,11 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Workflow, FileText, Tags, BarChart3, Plug } from "lucide-react";
+import { ChevronLeft, ChevronRight, Workflow, FileText, Tags, BarChart3, Plug, Sparkles, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const SLIDES = [
+  {
+    icon: Sparkles,
+    headline: "AI Content Generation",
+    description: "Connect your own OpenAI or Anthropic key and generate email copy, social captions, and images from a prompt.",
+  },
+  {
+    icon: Share2,
+    headline: "Social Media Manager",
+    description: "Compose posts for Facebook and Instagram with AI-generated captions and images, then schedule them to publish automatically.",
+  },
   {
     icon: Workflow,
     headline: "Automation Sequences",

@@ -6,6 +6,7 @@ import { sendEnrollmentStep } from "@/worker/sendSequenceStep";
 import { spawnNewsletterCampaign } from "@/worker/newsletterCycle";
 import { computeNextRunAt } from "@/lib/newsletterSchedule";
 import { syncContactToMonday } from "@/worker/mondaySyncJob";
+import { publishSocialPost } from "@/worker/publishSocialPost";
 
 type DueUser = { userId: string };
 type ClaimedRecipient = { id: string; campaignId: string; contactId: string };
@@ -294,9 +295,56 @@ async function pollMondaySyncOnce(): Promise<void> {
   }
 }
 
+// --- Social posts: same claim/reap shape as CampaignRecipient above (a real
+// PUBLISHING status, not just lockedAt) — SocialPost has meaningful distinct
+// terminal states the way a CampaignRecipient does, unlike SequenceEnrollment
+// or Newsletter. No per-user daily-limit/rate check here — social posting has
+// no equivalent of email's daily send cap.
+
+type ClaimedSocialPost = { id: string };
+
+async function claimNextSocialPost(): Promise<ClaimedSocialPost | null> {
+  const rows = await prisma.$queryRaw<ClaimedSocialPost[]>`
+    WITH due AS (
+      SELECT p.id
+      FROM "SocialPost" p
+      WHERE p.status = 'SCHEDULED'
+        AND p."scheduledAt" <= now()
+      ORDER BY p."scheduledAt" ASC
+      LIMIT 1
+      FOR UPDATE OF p SKIP LOCKED
+    )
+    UPDATE "SocialPost"
+    SET status = 'PUBLISHING', "lockedAt" = now()
+    WHERE id IN (SELECT id FROM due)
+    RETURNING id
+  `;
+  return rows[0] ?? null;
+}
+
+async function reapStalePublishingLocks(): Promise<void> {
+  await prisma.$executeRaw`
+    UPDATE "SocialPost"
+    SET status = 'SCHEDULED', "lockedAt" = NULL
+    WHERE status = 'PUBLISHING'
+      AND "lockedAt" < now() - (${STALE_LOCK_MINUTES}::text || ' minutes')::interval
+  `;
+}
+
+async function pollSocialPostsOnce(): Promise<void> {
+  await reapStalePublishingLocks();
+
+  for (;;) {
+    const claimed = await claimNextSocialPost();
+    if (!claimed) break;
+    await publishSocialPost(claimed.id);
+  }
+}
+
 export async function pollOnce(): Promise<void> {
   await pollCampaignsOnce();
   await pollSequencesOnce();
   await pollNewslettersOnce();
   await pollMondaySyncOnce();
+  await pollSocialPostsOnce();
 }
