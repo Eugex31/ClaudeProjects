@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Plus, Palette } from "lucide-react";
@@ -16,9 +16,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { EmailBodyEditor, type BodyFormat } from "@/components/campaigns/email-body-editor";
+import { EmailBodyEditor, type EmailBodyEditorHandle, type BodyFormat } from "@/components/campaigns/email-body-editor";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AiGeneratePanel } from "@/components/ai/ai-generate-panel";
+import { InsertBlocksMenu } from "@/components/campaigns/insert-blocks-menu";
 
 const NO_CATEGORY = "none";
 
@@ -63,6 +64,7 @@ export function TemplateFormDialog({
   const [categories, setCategories] = useState<{ id: string; label: string }[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [openingVisual, setOpeningVisual] = useState(false);
+  const bodyEditorRef = useRef<EmailBodyEditorHandle>(null);
 
   function handleOpenChange(next: boolean) {
     controlledOnOpenChange?.(next);
@@ -198,22 +200,31 @@ export function TemplateFormDialog({
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <Label>Body</Label>
-              {bodyFormat === "HTML" && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs"
-                  disabled={openingVisual || (!isEdit && !name.trim())}
-                  onClick={handleOpenVisualEditor}
-                  title={!isEdit && !name.trim() ? "Enter a name first" : undefined}
-                >
-                  <Palette className="mr-1.5 size-3.5" />
-                  Build visually instead
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                <InsertBlocksMenu bodyFormat={bodyFormat} onInsert={(html) => bodyEditorRef.current?.insertMergeVar(html)} />
+                {bodyFormat === "HTML" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    disabled={openingVisual || (!isEdit && !name.trim())}
+                    onClick={handleOpenVisualEditor}
+                    title={!isEdit && !name.trim() ? "Enter a name first" : undefined}
+                  >
+                    <Palette className="mr-1.5 size-3.5" />
+                    Build visually instead
+                  </Button>
+                )}
+              </div>
             </div>
-            <EmailBodyEditor bodyFormat={bodyFormat} onBodyFormatChange={setBodyFormat} content={body} onChange={setBody} />
+            <EmailBodyEditor
+              ref={bodyEditorRef}
+              bodyFormat={bodyFormat}
+              onBodyFormatChange={setBodyFormat}
+              content={body}
+              onChange={setBody}
+            />
           </div>
         </div>
         <DialogFooter>

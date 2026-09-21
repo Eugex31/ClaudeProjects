@@ -13,6 +13,13 @@ export const DEFAULT_SETTINGS = {
   signatureLogoFilename: null as string | null,
   unsubscribeFooterText: null as string | null,
   timezone: "UTC",
+  socialFacebookUrl: null as string | null,
+  socialInstagramUrl: null as string | null,
+  socialLinkedinUrl: null as string | null,
+  socialYoutubeUrl: null as string | null,
+  socialXUrl: null as string | null,
+  ctaDefaultLabel: null as string | null,
+  ctaDefaultUrl: null as string | null,
 };
 
 export async function getEffectiveSettings(userId: string) {

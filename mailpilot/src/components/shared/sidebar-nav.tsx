@@ -3,16 +3,41 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Users, Send, FileText, Workflow, Mail, BarChart3, Plug, ScrollText, Settings, CreditCard, Sparkles, Share2 } from "lucide-react";
+import {
+  LayoutDashboard,
+  Users,
+  Send,
+  FileText,
+  Workflow,
+  Mail,
+  BarChart3,
+  Plug,
+  ScrollText,
+  Settings,
+  CreditCard,
+  Sparkles,
+  Share2,
+  UsersRound,
+  type LucideIcon,
+} from "lucide-react";
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  requiresProfiles?: boolean;
+  hideWhileActing?: boolean;
+};
 
 // Grouped by what a customer is actually doing — the sending workflow
 // they're in day to day vs. account/admin concerns they visit occasionally.
 // Previously one flat, undifferentiated 11-item list with no hierarchy.
-const NAV_GROUPS = [
+const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Send",
     items: [
       { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/campaign-wizard", label: "AI Campaign Wizard", icon: Sparkles },
       { href: "/contacts", label: "Contacts", icon: Users },
       { href: "/campaigns", label: "Campaigns", icon: Send },
       { href: "/sequences", label: "Sequences", icon: Workflow },
@@ -28,18 +53,36 @@ const NAV_GROUPS = [
       { href: "/ai-connections", label: "AI Connections", icon: Sparkles },
       { href: "/integrations", label: "Integrations", icon: Plug },
       { href: "/logs", label: "Logs", icon: ScrollText },
-      { href: "/billing", label: "Billing", icon: CreditCard },
+      // Profiles/Billing are agency-level concerns — filtered out below
+      // whenever the plan doesn't include profiles, or while acting as one
+      // (a managed client can't itself manage profiles or billing).
+      { href: "/profiles", label: "Profiles", icon: UsersRound, requiresProfiles: true, hideWhileActing: true },
+      { href: "/billing", label: "Billing", icon: CreditCard, hideWhileActing: true },
       { href: "/settings", label: "Settings", icon: Settings },
     ],
   },
 ];
 
-export function SidebarNav() {
+export function SidebarNav({
+  showProfiles = false,
+  isActingAsProfile = false,
+}: {
+  showProfiles?: boolean;
+  isActingAsProfile?: boolean;
+}) {
   const pathname = usePathname();
+  const groups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => {
+      if (item.requiresProfiles && !showProfiles) return false;
+      if (item.hideWhileActing && isActingAsProfile) return false;
+      return true;
+    }),
+  }));
 
   return (
     <nav className="flex flex-col gap-4 p-3">
-      {NAV_GROUPS.map((group) => (
+      {groups.map((group) => (
         <div key={group.label} className="flex flex-col gap-1">
           <p className="px-3 pb-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">
             {group.label}

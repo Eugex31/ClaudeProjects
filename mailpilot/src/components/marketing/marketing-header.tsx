@@ -14,8 +14,8 @@ export function MarketingHeader() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Email Marketing" className="h-8 w-auto" />
-          <span className="hidden font-heading text-lg font-semibold sm:inline">Email Marketing</span>
+          <img src="/logo.png" alt="LyneSign Marketing" className="h-8 w-auto" />
+          <span className="hidden font-heading text-lg font-semibold sm:inline">LyneSign Marketing</span>
         </Link>
 
         <nav className="hidden items-center gap-6 md:flex">

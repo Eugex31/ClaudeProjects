@@ -52,6 +52,8 @@ model User {
   metaIdentity             MetaIdentity?
   socialAccounts           SocialAccount[]
   socialPosts              SocialPost[]
+  managedProfiles          ClientProfile[] @relation("ProfileParent")
+  profileOf                ClientProfile?  @relation("ProfileUser")
 }
 
 model Account {
@@ -61,7 +63,8 @@ model Account {
   provider          String
   providerAccountId String
   // access_token / refresh_token are stored ENCRYPTED (AES-256-GCM) — see lib/crypto/tokenCipher.ts.
-  // Never read/write these columns directly outside lib/gmail/getGmailClient.ts and the auth adapter wrapper.
+  // Never read/write these columns directly outside lib/gmail/getGmailClient.ts, the auth adapter
+  // wrapper (src/lib/auth.ts), and the profile-Gmail hand-rolled OAuth callback (src/app/api/profile-gmail/callback).
   refresh_token     String? @db.Text
   access_token      String? @db.Text
   expires_at        Int?
@@ -486,6 +489,16 @@ model Settings {
   signatureLogoFilename    String?
   unsubscribeFooterText String?  @db.Text
   timezone              String   @default("UTC")
+  // Account-level social pages + a reusable CTA default — inserted into
+  // campaign/template/sequence-step bodies via the "Insert social icons" /
+  // "Insert CTA button" editor actions (src/components/campaigns/insert-blocks-menu.tsx).
+  socialFacebookUrl  String?
+  socialInstagramUrl String?
+  socialLinkedinUrl  String?
+  socialYoutubeUrl   String?
+  socialXUrl         String?
+  ctaDefaultLabel    String?
+  ctaDefaultUrl      String?
   updatedAt             DateTime @updatedAt @db.Timestamptz(3)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -530,6 +543,9 @@ model Plan {
   // Number of connected Facebook Page / Instagram Business accounts. -1 =
   // unlimited, same convention as the limits above.
   socialAccountLimit Int @default(-1)
+  // Number of managed client ClientProfile rows a Pro/Agency account can
+  // create. 0 = feature unavailable (Free/Starter). -1 = unlimited.
+  profileLimit Int @default(0)
 
   subscriptions Subscription[]
 }
@@ -559,6 +575,28 @@ model Subscription {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   plan Plan @relation(fields: [planId], references: [id])
+}
+
+// A Pro/Agency account's managed client workspace. profileUser is a real,
+// full User row — its own Contacts/Campaigns/Templates/Sequences/Settings —
+// but with no password and no Google Account of its own; the only way in is
+// the parent switching into it (see src/lib/activeProfile.ts). Billing is
+// never separate: getEffectiveSubscription() resolves a profile's plan from
+// its parent. onDelete: Cascade on both FKs cleans up this join row when
+// either side is deleted, but deleting a parent does NOT cascade to delete
+// the profile's own User row (a second hop Prisma/Postgres cascade doesn't
+// follow) — see the admin customer-delete route, which does that explicitly.
+model ClientProfile {
+  id            String   @id @default(cuid())
+  parentUserId  String
+  profileUserId String   @unique
+  label         String
+  createdAt     DateTime @default(now()) @db.Timestamptz(3)
+
+  parent      User @relation("ProfileParent", fields: [parentUserId], references: [id], onDelete: Cascade)
+  profileUser User @relation("ProfileUser", fields: [profileUserId], references: [id], onDelete: Cascade)
+
+  @@index([parentUserId])
 }
 
 // One-way (app -> Monday) contact sync. Deliberately not the Account model —
@@ -660,13 +698,31 @@ model SocialAccount {
   displayName       String
   accessToken       String         @db.Text // encrypted
   connectedAt       DateTime       @default(now()) @db.Timestamptz(3)
+  followerCount     Int?
+  followerCountAt   DateTime?      @db.Timestamptz(3)
 
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   metaIdentity MetaIdentity @relation(fields: [metaIdentityId], references: [id], onDelete: Cascade)
   posts        SocialPost[]
+  snapshots    SocialFollowerSnapshot[]
 
   @@unique([userId, platform, externalAccountId])
   @@index([userId])
+}
+
+// One row per account per day (at most) — lets "new followers" be a real
+// delta over time instead of just the current count. A separate table
+// rather than reusing AiUsageCounter's per-day-row shape, since this tracks
+// a point-in-time value (follower count), not an incrementing sum.
+model SocialFollowerSnapshot {
+  id              String   @id @default(cuid())
+  socialAccountId String
+  followerCount   Int
+  capturedAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  socialAccount SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+
+  @@index([socialAccountId, capturedAt])
 }
 
 enum SocialPostStatus {
@@ -689,6 +745,11 @@ model SocialPost {
   externalPostId  String?
   errorMessage    String?          @db.Text
   lockedAt        DateTime?        @db.Timestamptz(3) // same stale-lock-reap pattern as CampaignRecipient
+  viewCount       Int? // impressions/reach; stays null for Facebook feed posts (no per-post view metric exposed) or until the first metrics fetch
+  likeCount       Int?
+  commentCount    Int?
+  shareCount      Int? // Facebook only — Instagram has no share count
+  metricsFetchedAt DateTime?       @db.Timestamptz(3)
   createdAt       DateTime         @default(now()) @db.Timestamptz(3)
   updatedAt       DateTime         @updatedAt @db.Timestamptz(3)
 

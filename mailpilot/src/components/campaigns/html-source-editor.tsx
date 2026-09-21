@@ -26,6 +26,14 @@ export const HtmlSourceEditor = forwardRef<
 >(function HtmlSourceEditor({ content, onChange, disabled, onFocus }, ref) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [mode, setMode] = useState<"preview" | "source">("preview");
+  // Local mirror of the displayed content, read only from the `content` prop
+  // on mount — matching RichTextEditor's Tiptap-owned-state pattern. The
+  // parent form (e.g. campaign-builder.tsx) doesn't re-render on every body
+  // change (only bodyFormat is watched), so a controlled `value={content}`
+  // driven straight off that prop would silently fail to reflect
+  // insertMergeVar/setContent calls even though the underlying form state
+  // (and the eventual save) is correct.
+  const [value, setValue] = useState(content);
 
   useImperativeHandle(ref, () => ({
     insertMergeVar: (token: string) => {
@@ -34,20 +42,18 @@ export const HtmlSourceEditor = forwardRef<
       // behind the preview.
       setMode("source");
       const el = textareaRef.current;
-      if (!el) {
-        onChange(content + token);
-        return;
-      }
-      const start = el.selectionStart ?? content.length;
-      const end = el.selectionEnd ?? content.length;
-      const next = content.slice(0, start) + token + content.slice(end);
+      const start = el?.selectionStart ?? value.length;
+      const end = el?.selectionEnd ?? value.length;
+      const next = value.slice(0, start) + token + value.slice(end);
+      setValue(next);
       onChange(next);
       requestAnimationFrame(() => {
-        el.focus();
-        el.setSelectionRange(start + token.length, start + token.length);
+        el?.focus();
+        el?.setSelectionRange(start + token.length, start + token.length);
       });
     },
     setContent: (html: string) => {
+      setValue(html);
       onChange(html);
     },
   }));
@@ -82,7 +88,7 @@ export const HtmlSourceEditor = forwardRef<
       {mode === "preview" ? (
         <div className="h-96 overflow-hidden rounded-md border bg-white">
           <iframe
-            srcDoc={content || "<p style='font-family:sans-serif;color:#9ca3af;padding:16px'>No content yet — switch to \"Edit HTML source\" to add some.</p>"}
+            srcDoc={value || "<p style='font-family:sans-serif;color:#9ca3af;padding:16px'>No content yet — switch to \"Edit HTML source\" to add some.</p>"}
             title="Email preview"
             sandbox="allow-same-origin"
             className="h-full w-full border-0"
@@ -91,8 +97,11 @@ export const HtmlSourceEditor = forwardRef<
       ) : (
         <Textarea
           ref={textareaRef}
-          value={content}
-          onChange={(e) => onChange(e.target.value)}
+          value={value}
+          onChange={(e) => {
+            setValue(e.target.value);
+            onChange(e.target.value);
+          }}
           onFocus={() => onFocus?.()}
           disabled={disabled}
           spellCheck={false}

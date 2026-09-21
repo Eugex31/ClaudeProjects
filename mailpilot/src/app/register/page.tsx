@@ -22,7 +22,7 @@ export default async function RegisterPage({
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Email Marketing" className="mx-auto mb-2 h-12 w-auto" />
+          <img src="/logo.png" alt="LyneSign Marketing" className="mx-auto mb-2 h-12 w-auto" />
           <CardTitle className="text-2xl">Create your account</CardTitle>
           <CardDescription>Connect Gmail afterward to start sending campaigns.</CardDescription>
         </CardHeader>

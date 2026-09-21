@@ -7,6 +7,8 @@ import { spawnNewsletterCampaign } from "@/worker/newsletterCycle";
 import { computeNextRunAt } from "@/lib/newsletterSchedule";
 import { syncContactToMonday } from "@/worker/mondaySyncJob";
 import { publishSocialPost } from "@/worker/publishSocialPost";
+import { decryptToken } from "@/lib/crypto/tokenCipher";
+import { getPostMetrics, getFollowerCount } from "@/lib/meta/client";
 
 type DueUser = { userId: string };
 type ClaimedRecipient = { id: string; campaignId: string; contactId: string };
@@ -341,10 +343,69 @@ async function pollSocialPostsOnce(): Promise<void> {
   }
 }
 
+// --- Social metrics: best-effort background enrichment, same "no row-lock
+// needed" reasoning as Monday sync (src/worker/mondaySyncJob.ts's caller
+// above) — refreshing a view/like count is idempotent and low-stakes, not
+// the core send/publish path, so a plain bounded loop is enough.
+
+const MAX_METRICS_REFRESH_PER_TICK = 20;
+const METRICS_REFRESH_HOURS = 1;
+const FOLLOWER_SNAPSHOT_HOURS = 24;
+
+async function pollSocialMetricsOnce(): Promise<void> {
+  const staleCutoff = new Date(Date.now() - METRICS_REFRESH_HOURS * 60 * 60 * 1000);
+  const posts = await prisma.socialPost.findMany({
+    where: {
+      status: "PUBLISHED",
+      externalPostId: { not: null },
+      OR: [{ metricsFetchedAt: null }, { metricsFetchedAt: { lt: staleCutoff } }],
+    },
+    orderBy: { metricsFetchedAt: "asc" },
+    take: MAX_METRICS_REFRESH_PER_TICK,
+    include: { socialAccount: true },
+  });
+
+  for (const post of posts) {
+    try {
+      const accessToken = decryptToken(post.socialAccount.accessToken);
+      const metrics = await getPostMetrics(accessToken, post.socialAccount.platform, post.externalPostId!);
+      await prisma.socialPost.update({
+        where: { id: post.id },
+        data: { ...metrics, metricsFetchedAt: new Date() },
+      });
+    } catch (err) {
+      console.error(`[social metrics] failed to refresh post ${post.id}:`, err);
+      // Still mark it fetched — a broken post shouldn't be retried every tick.
+      await prisma.socialPost.update({ where: { id: post.id }, data: { metricsFetchedAt: new Date() } });
+    }
+  }
+
+  const snapshotCutoff = new Date(Date.now() - FOLLOWER_SNAPSHOT_HOURS * 60 * 60 * 1000);
+  const accounts = await prisma.socialAccount.findMany({
+    where: { OR: [{ followerCountAt: null }, { followerCountAt: { lt: snapshotCutoff } }] },
+  });
+
+  for (const account of accounts) {
+    try {
+      const accessToken = decryptToken(account.accessToken);
+      const followerCount = await getFollowerCount(accessToken, account.platform, account.externalAccountId);
+      if (followerCount === null) continue;
+      const now = new Date();
+      await prisma.$transaction([
+        prisma.socialAccount.update({ where: { id: account.id }, data: { followerCount, followerCountAt: now } }),
+        prisma.socialFollowerSnapshot.create({ data: { socialAccountId: account.id, followerCount, capturedAt: now } }),
+      ]);
+    } catch (err) {
+      console.error(`[social metrics] failed to refresh follower count for account ${account.id}:`, err);
+    }
+  }
+}
+
 export async function pollOnce(): Promise<void> {
   await pollCampaignsOnce();
   await pollSequencesOnce();
   await pollNewslettersOnce();
   await pollMondaySyncOnce();
   await pollSocialPostsOnce();
+  await pollSocialMetricsOnce();
 }

@@ -22,8 +22,8 @@ export default async function LoginPage({
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.png" alt="Email Marketing" className="mx-auto mb-2 h-12 w-auto" />
-          <CardTitle className="text-2xl">Email Marketing</CardTitle>
+          <img src="/logo.png" alt="LyneSign Marketing" className="mx-auto mb-2 h-12 w-auto" />
+          <CardTitle className="text-2xl">LyneSign Marketing</CardTitle>
           <CardDescription>Sign in to send and manage your campaigns.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">

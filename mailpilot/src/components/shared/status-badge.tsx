@@ -12,6 +12,9 @@ const STATUS_STYLES: Record<string, string> = {
   SENT: "bg-green-500/15 text-green-600 dark:text-green-400",
   RETRYING: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
   SKIPPED: "bg-zinc-500/15 text-zinc-600 dark:text-zinc-400",
+  SCHEDULED: "bg-blue-500/15 text-blue-600 dark:text-blue-400",
+  PUBLISHING: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
+  PUBLISHED: "bg-green-500/15 text-green-600 dark:text-green-400",
 };
 
 export function StatusBadge({ status }: { status: string }) {

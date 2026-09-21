@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { MergeVarPicker } from "@/components/campaigns/merge-var-picker";
+import { InsertBlocksMenu } from "@/components/campaigns/insert-blocks-menu";
 import { AiGeneratePanel } from "@/components/ai/ai-generate-panel";
 import { RecipientsPanel } from "@/components/campaigns/recipients-panel";
 import { PreviewPane } from "@/components/campaigns/preview-pane";
@@ -281,7 +282,10 @@ export function CampaignBuilder({ campaignId, userEmail }: { campaignId: string;
               <div className="flex flex-col gap-1.5">
                 <div className="flex items-center justify-between">
                   <Label>Body</Label>
-                  <MergeVarPicker onInsert={insertMergeVar} />
+                  <div className="flex items-center gap-2">
+                    <InsertBlocksMenu bodyFormat={bodyFormat} onInsert={insertMergeVar} />
+                    <MergeVarPicker onInsert={insertMergeVar} />
+                  </div>
                 </div>
                 <EmailBodyEditor
                   ref={bodyEditorRef}

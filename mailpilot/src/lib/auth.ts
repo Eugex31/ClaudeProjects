@@ -6,7 +6,11 @@ import { encryptToken } from "@/lib/crypto/tokenCipher";
 
 // Minimal scope: identity + permission to send mail as the user. Never request
 // broader Gmail scopes (readonly/modify/full mail access) than the app needs.
-const GMAIL_SCOPE = "openid email profile https://www.googleapis.com/auth/gmail.send";
+// Exported for src/app/api/profile-gmail/**, which needs the identical scope
+// for its own hand-rolled OAuth dance (a managed client profile has no
+// Auth.js session of its own to run signIn("google") through — see that
+// route's comments for why).
+export const GMAIL_SCOPE = "openid email profile https://www.googleapis.com/auth/gmail.send";
 
 const baseAdapter = PrismaAdapter(prisma);
 

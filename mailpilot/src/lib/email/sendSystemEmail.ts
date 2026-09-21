@@ -18,7 +18,7 @@ export type SystemEmailInput = {
 
 export async function sendSystemEmail(input: SystemEmailInput): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.SYSTEM_EMAIL_FROM ?? "Email Marketing <onboarding@resend.dev>";
+  const from = process.env.SYSTEM_EMAIL_FROM ?? "LyneSign Marketing <onboarding@resend.dev>";
 
   if (!apiKey) {
     console.warn(

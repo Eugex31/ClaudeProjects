@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { EmailBodyEditor, type EmailBodyEditorHandle, type BodyFormat } from "@/components/campaigns/email-body-editor";
 import { BrowseTemplatesModal } from "@/components/templates/browse-templates-modal";
 import { AiGeneratePanel } from "@/components/ai/ai-generate-panel";
+import { InsertBlocksMenu } from "@/components/campaigns/insert-blocks-menu";
 
 export type StepRecord = {
   id: string;
@@ -173,7 +174,10 @@ export function StepFormDialog({
             onGenerated={(result) => loadTemplate({ subject: result.subject, body: result.bodyHtml, bodyFormat: "RICH_TEXT" })}
           />
           <div className="flex flex-col gap-1.5">
-            <Label>Body</Label>
+            <div className="flex items-center justify-between">
+              <Label>Body</Label>
+              <InsertBlocksMenu bodyFormat={bodyFormat} onInsert={(html) => bodyEditorRef.current?.insertMergeVar(html)} />
+            </div>
             <EmailBodyEditor
               ref={bodyEditorRef}
               bodyFormat={bodyFormat}

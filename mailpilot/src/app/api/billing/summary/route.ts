@@ -25,6 +25,7 @@ export const GET = withAuth(async (_req, { userId }) => {
       emailsPerMonthLimit: subscription.plan.emailsPerMonthLimit,
       aiGenerationsPerMonthLimit: subscription.plan.aiGenerationsPerMonthLimit,
       socialAccountLimit: subscription.plan.socialAccountLimit,
+      profileLimit: subscription.plan.profileLimit,
     },
     plans,
   });

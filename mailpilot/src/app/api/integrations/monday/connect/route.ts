@@ -2,20 +2,24 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "crypto";
 import { auth } from "@/lib/auth";
 import { requireCrmEnabled } from "@/lib/billing";
+import { resolveEffectiveUserId } from "@/lib/activeProfile";
 
 const STATE_COOKIE = "monday_oauth_state";
 
 // Connect-while-logged-in, not a sign-in flow — deliberately not a NextAuth
 // provider (same reasoning as password auth in Phase 1: Monday isn't an
 // identity source for this app). The session already tells us who's
-// connecting; `state` here is pure CSRF protection.
+// connecting; `state` here is pure CSRF protection. The CRM-enabled gate is
+// checked against the resolved (possibly-a-profile) tenant, since that's
+// whose plan actually governs it via getEffectiveSubscription.
 export async function GET() {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const { userId } = await resolveEffectiveUserId(session.user.id);
 
-  const gate = await requireCrmEnabled(session.user.id);
+  const gate = await requireCrmEnabled(userId);
   if (!gate.allowed) {
     return NextResponse.json({ error: gate.message }, { status: 402 });
   }
