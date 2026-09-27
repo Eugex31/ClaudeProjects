@@ -61,10 +61,22 @@
     "caption": "Advertise Where Cars Get the Full Treatment.\n\nCustomers wait for their ride and watch your ad the whole time. A detail shop lobby means minutes of undivided attention.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonAutoShops #IndoorAdvertising #DigitalSignage #LocalBusiness"
   },
   {
+    "slug": "restaurant3",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/restaurant3.png",
+    "caption": "Reach Customers During Their Everyday Routine.\n\nDinner with friends means minutes of attention with nowhere else to look. A packed table is a packed house for your ad.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonEats #IndoorAdvertising #DigitalSignage #LocalBusiness"
+  },
+  {
     "slug": "gym3",
     "status": "pending",
     "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/gym3.png",
     "caption": "Advertise Where Cardio Never Stops.\n\nEyes locked forward on the treadmill means eyes locked on your ad. Members log the miles, your brand logs the impressions.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonGyms #IndoorAdvertising #DigitalSignage #LocalBusinessGrowth"
+  },
+  {
+    "slug": "gym5",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/gym5.png",
+    "caption": "Indoor Billboards Build Brand Recognition, One Rep at a Time.\n\nMembers clock their reps with your ad locked in their line of sight. Consistent exposure builds a brand people remember.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonGyms #IndoorAdvertising #DigitalSignage #LocalBusinessGrowth"
   },
   {
     "slug": "grocery2",
@@ -73,10 +85,22 @@
     "caption": "Advertise Where the Cart Fills Up Fast.\n\nShoppers stocking up have time to notice what's on screen. Every aisle is another chance for your brand to get seen.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #ShopLocal #IndoorAdvertising #HoustonBusiness #DigitalSignage"
   },
   {
+    "slug": "barbershop4",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/barbershop4.png",
+    "caption": "Turn Downtime Into Brand Time.\n\nA haircut takes twenty minutes of undivided attention, and your ad gets all of it.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonBarbershop #IndoorAdvertising #DigitalSignage #LocalBusiness"
+  },
+  {
     "slug": "waitingroom",
     "status": "pending",
     "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/waitingroom.png",
     "caption": "Advertise Where the Wait Feels Longer Than It Is.\n\nA captive audience in the lobby with nothing to do but watch. Turn downtime into your brand's time.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #IndoorAdvertising #HoustonBusiness #DigitalSignage #LocalMarketing"
+  },
+  {
+    "slug": "nailsalon3",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/nailsalon3.png",
+    "caption": "Get Noticed While They Sit Back and Relax.\n\nLong appointments mean long, uninterrupted time with your brand on screen.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonBeauty #IndoorAdvertising #DigitalSignage #LocalBusinessGrowth"
   },
   {
     "slug": "cocktaillounge",
@@ -85,10 +109,22 @@
     "caption": "Advertise Where the Night Gets Started.\n\nRegulars at the bar have plenty of time to notice your brand. Good company, good drinks, and your ad on repeat.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonNightlife #IndoorAdvertising #DigitalSignage #LocalBusiness"
   },
   {
+    "slug": "laundromat2",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/laundromat2.png",
+    "caption": "Your Brand, On Repeat, While the Cycle Runs.\n\nLaundry takes time nobody rushes, and that's exactly the kind of attention your ad needs.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonBusiness #IndoorAdvertising #DigitalSignage #LocalMarketing"
+  },
+  {
     "slug": "restaurant2",
     "status": "pending",
     "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/restaurant2.png",
     "caption": "Advertise Where the Whole Table's Watching.\n\nDinner takes time, and so does noticing what's on screen. Every seated table is more time with your brand.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonEats #IndoorAdvertising #DigitalSignage #LocalMarketing"
+  },
+  {
+    "slug": "sportsbar",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/sportsbar.png",
+    "caption": "Game Day Crowds Make for Prime-Time Exposure.\n\nMultiple screens, one packed bar, and your ad in the rotation with the game.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonNightlife #IndoorAdvertising #DigitalSignage #LocalBusiness"
   },
   {
     "slug": "cafe",
@@ -97,16 +133,34 @@
     "caption": "Advertise Where Coffee Meets Conversation.\n\nRegulars linger over their order, giving your ad plenty of time to land. A busy cafe means a steady stream of new eyes every day.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonCafes #IndoorAdvertising #DigitalSignage #LocalBusiness"
   },
   {
+    "slug": "grocery4",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/grocery4.png",
+    "caption": "Every Shopping Trip Is Another Chance to Be Seen.\n\nShoppers filling their cart have a spare moment to notice what's on screen.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #ShopLocal #IndoorAdvertising #HoustonBusiness #DigitalSignage"
+  },
+  {
     "slug": "gym4",
     "status": "pending",
     "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/gym4.png",
     "caption": "Advertise Where Motivation Never Quits.\n\nMembers show up for the reps and stay long enough to notice your brand. Another gym, another packed floor of built-in attention.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonGyms #IndoorAdvertising #DigitalSignage #LocalBusinessGrowth"
   },
   {
+    "slug": "autorepair3",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/autorepair3.png",
+    "caption": "Keep Your Brand Running While Theirs Gets Serviced.\n\nTune-ups and oil changes take time, and that's time your ad spends on screen.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonAutoShops #IndoorAdvertising #DigitalSignage #LocalBusiness"
+  },
+  {
     "slug": "barbershop3",
     "status": "pending",
     "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/barbershop3.png",
     "caption": "Advertise Where the Cut Takes Twenty Minutes.\n\nNo phone, no distractions, just a chair, a mirror, and your ad on screen. Another barbershop, another captive audience.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonBarbershop #IndoorAdvertising #DigitalSignage #LocalBusiness"
+  },
+  {
+    "slug": "waitingroom3",
+    "status": "pending",
+    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/waitingroom3.png",
+    "caption": "Patients Are Waiting. Your Brand Could Be Too.\n\nA clinic waiting room means a captive audience with nothing to do but watch.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #IndoorAdvertising #HoustonBusiness #DigitalSignage #LocalMarketing"
   },
   {
     "slug": "nailsalon2",
@@ -143,59 +197,5 @@
     "status": "pending",
     "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/waitingroom2.png",
     "caption": "Advertise Where Every Minute Feels Like Five.\n\nA waiting room audience has nothing to do but watch your ad play. Turn their downtime into your exposure.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #IndoorAdvertising #HoustonBusiness #DigitalSignage #LocalMarketing"
-  },
-  {
-    "slug": "restaurant3",
-    "status": "pending",
-    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/restaurant3.png",
-    "caption": "Reach Customers During Their Everyday Routine.\n\nDinner with friends means minutes of attention with nowhere else to look. A packed table is a packed house for your ad.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonEats #IndoorAdvertising #DigitalSignage #LocalBusiness"
-  },
-  {
-    "slug": "gym5",
-    "status": "pending",
-    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/gym5.png",
-    "caption": "Indoor Billboards Build Brand Recognition, One Rep at a Time.\n\nMembers clock their reps with your ad locked in their line of sight. Consistent exposure builds a brand people remember.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonGyms #IndoorAdvertising #DigitalSignage #LocalBusinessGrowth"
-  },
-  {
-    "slug": "barbershop4",
-    "status": "pending",
-    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/barbershop4.png",
-    "caption": "Turn Downtime Into Brand Time.\n\nA haircut takes twenty minutes of undivided attention, and your ad gets all of it.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonBarbershop #IndoorAdvertising #DigitalSignage #LocalBusiness"
-  },
-  {
-    "slug": "nailsalon3",
-    "status": "pending",
-    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/nailsalon3.png",
-    "caption": "Get Noticed While They Sit Back and Relax.\n\nLong appointments mean long, uninterrupted time with your brand on screen.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonBeauty #IndoorAdvertising #DigitalSignage #LocalBusinessGrowth"
-  },
-  {
-    "slug": "laundromat2",
-    "status": "pending",
-    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/laundromat2.png",
-    "caption": "Your Brand, On Repeat, While the Cycle Runs.\n\nLaundry takes time nobody rushes, and that's exactly the kind of attention your ad needs.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonBusiness #IndoorAdvertising #DigitalSignage #LocalMarketing"
-  },
-  {
-    "slug": "sportsbar",
-    "status": "pending",
-    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/sportsbar.png",
-    "caption": "Game Day Crowds Make for Prime-Time Exposure.\n\nMultiple screens, one packed bar, and your ad in the rotation with the game.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonNightlife #IndoorAdvertising #DigitalSignage #LocalBusiness"
-  },
-  {
-    "slug": "grocery4",
-    "status": "pending",
-    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/grocery4.png",
-    "caption": "Every Shopping Trip Is Another Chance to Be Seen.\n\nShoppers filling their cart have a spare moment to notice what's on screen.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #ShopLocal #IndoorAdvertising #HoustonBusiness #DigitalSignage"
-  },
-  {
-    "slug": "autorepair3",
-    "status": "pending",
-    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/autorepair3.png",
-    "caption": "Keep Your Brand Running While Theirs Gets Serviced.\n\nTune-ups and oil changes take time, and that's time your ad spends on screen.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonAutoShops #IndoorAdvertising #DigitalSignage #LocalBusiness"
-  },
-  {
-    "slug": "waitingroom3",
-    "status": "pending",
-    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/waitingroom3.png",
-    "caption": "Patients Are Waiting. Your Brand Could Be Too.\n\nA clinic waiting room means a captive audience with nothing to do but watch.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #IndoorAdvertising #HoustonBusiness #DigitalSignage #LocalMarketing"
   }
 ]
