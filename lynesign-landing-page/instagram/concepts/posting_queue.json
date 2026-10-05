@@ -96,21 +96,23 @@
   },
   {
     "slug": "cocktaillounge",
-    "status": "pending",
-    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/cocktaillounge.png",
-    "caption": "Advertise Where the Night Gets Started.\n\nRegulars at the bar have plenty of time to notice your brand. Good company, good drinks, and your ad on repeat.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonNightlife #IndoorAdvertising #DigitalSignage #LocalBusiness"
+    "status": "posted",
+    "permalink": "https://www.instagram.com/p/DeFNPaRnY0u/",
+    "note": "accidentally posted a second time on 2026-10-05 (duplicate: https://www.instagram.com/p/DeIBk32GZc-/) - delete the duplicate manually in the Instagram app, the API cannot delete posts"
   },
   {
     "slug": "laundromat2",
-    "status": "pending",
+    "status": "drafted",
     "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/laundromat2.png",
-    "caption": "Your Brand, On Repeat, While the Cycle Runs.\n\nLaundry takes time nobody rushes, and that's exactly the kind of attention your ad needs.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonBusiness #IndoorAdvertising #DigitalSignage #LocalMarketing"
+    "caption": "Your Brand, On Repeat, While the Cycle Runs.\n\nLaundry takes time nobody rushes, and that's exactly the kind of attention your ad needs.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonBusiness #IndoorAdvertising #DigitalSignage #LocalMarketing",
+    "creation_id": "17911015854514895"
   },
   {
     "slug": "restaurant2",
-    "status": "pending",
+    "status": "drafted",
     "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/restaurant2.png",
-    "caption": "Advertise Where the Whole Table's Watching.\n\nDinner takes time, and so does noticing what's on screen. Every seated table is more time with your brand.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonEats #IndoorAdvertising #DigitalSignage #LocalMarketing"
+    "caption": "Advertise Where the Whole Table's Watching.\n\nDinner takes time, and so does noticing what's on screen. Every seated table is more time with your brand.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #HoustonEats #IndoorAdvertising #DigitalSignage #LocalMarketing",
+    "creation_id": "17911175385514895"
   },
   {
     "slug": "sportsbar",
