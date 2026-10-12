@@ -10,7 +10,7 @@ export default defineConfig({
   webServer: {
     command: `npm run dev -- -p ${port}`,
     url: baseURL,
-    reuseExistingServer: true,
+    reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: { NEXT_PUBLIC_SITE_URL: baseURL },
   },

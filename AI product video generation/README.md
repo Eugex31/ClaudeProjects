@@ -16,13 +16,13 @@ cp .env.example .env.local  # then fill in the values below
 npm run dev
 ```
 
-Fill `.env.local` from the output of `npx supabase status` (`NEXT_PUBLIC_SUPABASE_ANON_KEY` = anon / publishable key, `SUPABASE_SERVICE_ROLE_KEY` = service role / secret key) and add your `ANTHROPIC_API_KEY`. The app runs at http://localhost:3000.
+Fill `.env.local` from the output of `npx supabase status` (`NEXT_PUBLIC_SUPABASE_ANON_KEY` = anon / publishable key, `SUPABASE_SERVICE_ROLE_KEY` = service role / secret key) and add your `ANTHROPIC_API_KEY` (only needed for AI generation). `ANTHROPIC_MODEL` and `NEXT_PUBLIC_SITE_URL` come from the `.env.example` defaults (model defaults to claude-sonnet-5-5; site URL http://localhost:3000). The app runs at http://localhost:3000.
 
 ## Tests
 
 - `npm test` - unit tests (Vitest).
 - `npm run test:rls` - row-level-security tests; needs the local Supabase stack running.
-- `npm run test:e2e` - Playwright smoke test (signup, sample project, preview, share link, public player). Needs the local stack and `.env.local`; install the browser once with `npx playwright install chromium`. It starts `npm run dev` itself unless a server is already running.
+- `npm run test:e2e` - Playwright smoke test (signup, sample project, preview, share link, public player). Needs the local stack and `.env.local`; install the browser once with `npx playwright install chromium`. It starts `npm run dev` itself unless a server is already running. If port 3000 is in use, run with `E2E_PORT=3100 npm run test:e2e`.
 
 ## Deploy
 
