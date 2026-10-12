@@ -130,7 +130,6 @@ export class AssemblyScene {
     this.parts.clear();
     this.originals = [];
     this.renderer.dispose();
-    this.renderer.forceContextLoss();
   }
 
   private disposeMaterial(m: THREE.Material) {
