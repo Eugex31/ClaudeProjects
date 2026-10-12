@@ -36,3 +36,27 @@ test("revoked token is not shared", async () => {
 test("malformed tokens are rejected without a query", async () => {
   expect(await loadSharedProject("short", admin())).toBeNull();
 });
+
+test("assets cannot point at another tenant's storage prefix", async () => {
+  const other = await makeUser(`share-other-${run}@test.dev`);
+  const { data: p } = await client.from("projects").select("org_id").eq("id", projectId).single();
+  const { error } = await client.from("assets").insert({
+    org_id: p!.org_id, project_id: projectId, kind: "model",
+    storage_path: `${other.orgId}/${projectId}/1-file.glb`, filename: "file.glb",
+  });
+  expect(error).not.toBeNull();
+  const { error: ownOk } = await client.from("assets").insert({
+    org_id: p!.org_id, project_id: projectId, kind: "export",
+    storage_path: `${p!.org_id}/${projectId}/1-file.glb`, filename: "file.glb",
+  });
+  expect(ownOk).toBeNull();
+});
+
+test("a viewer cannot create a share link", async () => {
+  const owner = await makeUser(`share-own2-${run}@test.dev`);
+  const { data: p } = await owner.client.from("projects").insert({ org_id: owner.orgId, name: "V" }).select().single();
+  const v = await makeUser(`share-viewer-${run}@test.dev`);
+  await admin().from("memberships").insert({ org_id: owner.orgId, user_id: v.userId, role: "viewer" });
+  const { data } = await v.client.from("projects").update({ share_token: "c".repeat(32) }).eq("id", p!.id).is("share_token", null).select("id");
+  expect(data ?? []).toHaveLength(0);
+});

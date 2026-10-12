@@ -56,7 +56,11 @@ create table public.assets (
   filename text not null,
   size_bytes bigint not null default 0,
   created_at timestamptz not null default now(),
-  foreign key (project_id, org_id) references public.projects (id, org_id) on delete cascade
+  foreign key (project_id, org_id) references public.projects (id, org_id) on delete cascade,
+  constraint assets_storage_path_scoped check (
+    storage_path ~ '^sample:[A-Za-z0-9_-]+[.]glb$'
+    or starts_with(storage_path, org_id::text || '/' || project_id::text || '/')
+  )
 );
 create index assets_project_idx on public.assets (project_id);
 

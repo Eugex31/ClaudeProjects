@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { modelUrlFor } from "@/lib/data/assets";
+import { modelUrlFor, newestModel } from "@/lib/data/assets";
 import { ProjectEditor } from "@/components/ProjectEditor";
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
@@ -16,9 +16,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
     .eq("org_id", project.org_id).eq("user_id", user.id).maybeSingle();
   if (!membership) notFound();
   const sb = Array.isArray(project.storyboards) ? project.storyboards[0] : project.storyboards;
-  const model = [...project.assets]
-    .filter((a: { kind: string }) => a.kind === "model")
-    .sort((a: { created_at: string }, b: { created_at: string }) => b.created_at.localeCompare(a.created_at))[0];
+  const model = newestModel(project.assets);
   if (!model) return <p>This project has no model. Delete it and create it again.</p>;
   const modelUrl = await modelUrlFor(supabase, model.storage_path);
   return (

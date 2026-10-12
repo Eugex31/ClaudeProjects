@@ -12,3 +12,11 @@ export async function modelUrlFor(supabase: SupabaseClient, storagePath: string)
   if (error || !data) throw new Error("Could not sign model URL");
   return data.signedUrl;
 }
+
+export function isScopedModelPath(path: string, orgId: string, projectId: string): boolean {
+  return resolveSamplePath(path) !== null || path.startsWith(`${orgId}/${projectId}/`);
+}
+
+export function newestModel<T extends { kind: string; created_at: string }>(assets: T[]): T | undefined {
+  return assets.filter((a) => a.kind === "model").sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+}
