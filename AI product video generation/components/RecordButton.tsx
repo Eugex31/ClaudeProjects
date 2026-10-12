@@ -20,7 +20,8 @@ export function RecordButton({ project, steps, parts, modelUrl, approved, canUpl
     try {
       const { blob, mimeType } = await recordVideo({ modelUrl, steps, manifest: parts, onProgress: setProgress });
       const ext = mimeType.startsWith("video/mp4") ? "mp4" : "webm";
-      const filename = `${project.name.replace(/[^A-Za-z0-9_-]+/g, "-")}.${ext}`;
+      const base = project.name.replace(/[^A-Za-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "storyboard";
+      const filename = `${base}.${ext}`;
       const url = URL.createObjectURL(blob);
       Object.assign(document.createElement("a"), { href: url, download: filename }).click();
       setTimeout(() => URL.revokeObjectURL(url), 10_000);

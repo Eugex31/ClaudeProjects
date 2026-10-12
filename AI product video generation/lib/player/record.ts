@@ -24,6 +24,42 @@ export function wrapText(measure: (s: string) => number, text: string, maxWidth:
   return lines;
 }
 
+export const HIDDEN_MESSAGE = "Recording cancelled: the tab was hidden. Keep this tab visible while recording.";
+
+/** Real-time frame loop. Rejects if a frame throws or a watcher signals failure (hidden tab, recorder error). */
+export function runFrames(o: {
+  total: number; maxT: number; draw: (t: number) => void; onProgress?: (fraction: number) => void;
+  raf: (cb: () => void) => void; now: () => number;
+  watch: (reject: (err: Error) => void) => () => void;
+}): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    let done = false;
+    const watcher: { off?: () => void } = {};
+    const finish = (err?: Error) => {
+      if (done) return;
+      done = true;
+      watcher.off?.();
+      if (err) reject(err); else resolve();
+    };
+    watcher.off = o.watch((err) => finish(err));
+    if (done) watcher.off();
+    const startedAt = o.now();
+    const tick = () => {
+      if (done) return;
+      try {
+        const t = (o.now() - startedAt) / 1000;
+        o.draw(Math.min(t, o.maxT));
+        o.onProgress?.(Math.min(t / o.total, 1));
+        if (t >= o.total) return finish();
+        o.raf(tick);
+      } catch (err) {
+        finish(err instanceof Error ? err : new Error(String(err)));
+      }
+    };
+    o.raf(tick);
+  });
+}
+
 function drawCaption(ctx: CanvasRenderingContext2D, caption: NonNullable<ReturnType<typeof captionFor>>) {
   const pad = 32;
   const maxWidth = WIDTH - pad * 2;
@@ -71,6 +107,7 @@ export async function recordVideo(opts: {
   const ctx = out.getContext("2d")!;
 
   const scene = new AssemblyScene(glCanvas, { preserveDrawingBuffer: true });
+  let stream: MediaStream | undefined;
   try {
     scene.renderer.setPixelRatio(1);
     scene.resize(WIDTH, HEIGHT);
@@ -78,7 +115,8 @@ export async function recordVideo(opts: {
     scene.setStoryboard(opts.steps, opts.manifest);
     const total = scene.timeline.total + TAIL_SECONDS;
 
-    const recorder = new MediaRecorder(out.captureStream(FPS), { mimeType, videoBitsPerSecond: 6_000_000 });
+    stream = out.captureStream(FPS);
+    const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 6_000_000 });
     const chunks: Blob[] = [];
     recorder.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
     const stopped = new Promise<void>((resolve) => { recorder.onstop = () => resolve(); });
@@ -93,16 +131,27 @@ export async function recordVideo(opts: {
     drawFrame(0);
     recorder.start(1000);
     try {
-      const startedAt = performance.now();
-      await new Promise<void>((resolve) => {
-        const tick = () => {
-          const t = (performance.now() - startedAt) / 1000;
-          drawFrame(Math.min(t, scene.timeline.total));
-          opts.onProgress?.(Math.min(t / total, 1));
-          if (t >= total) return resolve();
-          requestAnimationFrame(tick);
-        };
-        requestAnimationFrame(tick);
+      await runFrames({
+        total,
+        maxT: scene.timeline.total,
+        draw: drawFrame,
+        onProgress: opts.onProgress,
+        raf: (cb) => { requestAnimationFrame(cb); },
+        now: () => performance.now(),
+        watch: (reject) => {
+          const onVisibility = () => {
+            if (document.hidden) reject(new Error(HIDDEN_MESSAGE));
+          };
+          document.addEventListener("visibilitychange", onVisibility);
+          recorder.onerror = (e) => {
+            const err = (e as Event & { error?: unknown }).error;
+            reject(new Error(`Recording failed: ${err instanceof Error ? err.message : String(err ?? "unknown error")}`));
+          };
+          return () => {
+            document.removeEventListener("visibilitychange", onVisibility);
+            recorder.onerror = null;
+          };
+        },
       });
     } finally {
       if (recorder.state !== "inactive") recorder.stop();
@@ -110,6 +159,7 @@ export async function recordVideo(opts: {
     await stopped;
     return { blob: new Blob(chunks, { type: mimeType.split(";")[0] }), mimeType };
   } finally {
+    stream?.getTracks().forEach((t) => t.stop());
     scene.dispose();
     scene.renderer.forceContextLoss();
   }
