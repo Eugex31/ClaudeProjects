@@ -3,16 +3,20 @@ import { createClient } from "@/lib/supabase/server";
 import { currentPeriod } from "@/lib/quota";
 import { changeRole, createInvite, removeMember, renameOrg } from "./actions";
 
+type Member = { user_id: string; email: string | null; role: string };
+type Invite = { token: string; email: string; role: string; expires_at: string; accepted_at: string | null };
+
 export default async function SettingsPage() {
   const org = await getCurrentOrg();
   const supabase = await createClient();
   const isOwner = org.role === "owner";
-  const [{ data: members }, { data: invites }, { data: usage }] = await Promise.all([
-    supabase.from("memberships").select("user_id, role").eq("org_id", org.id),
+  const [{ data: memberRows }, { data: invites }, { data: usage }] = await Promise.all([
+    supabase.rpc("org_members", { target_org: org.id }),
     isOwner ? supabase.from("invites").select("token, email, role, expires_at, accepted_at").eq("org_id", org.id)
-            : Promise.resolve({ data: [] as any[] }),
+            : Promise.resolve({ data: [] as Invite[] }),
     supabase.from("usage").select("generations").eq("org_id", org.id).eq("period", currentPeriod()).maybeSingle(),
   ]);
+  const members = (memberRows ?? []) as Member[];
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "";
   return (
     <div className="max-w-2xl space-y-8">
@@ -29,9 +33,9 @@ export default async function SettingsPage() {
       <section>
         <h2 className="mb-2 font-semibold">Members</h2>
         <ul className="divide-y rounded border">
-          {members?.map((m) => (
+          {members.map((m) => (
             <li key={m.user_id} className="flex items-center gap-2 p-2 text-sm">
-              <code>{m.user_id.slice(0, 8)}</code>
+              <span className="truncate">{m.email ?? m.user_id.slice(0, 8)}</span>
               {isOwner ? (
                 <>
                   <form action={changeRole} className="ml-auto flex gap-1">
