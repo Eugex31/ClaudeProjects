@@ -1,0 +1,44 @@
+{
+  "name": "stepreel",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:rls": "vitest run -c vitest.rls.config.ts",
+    "test:e2e": "playwright test",
+    "db:start": "supabase start",
+    "db:reset": "supabase db reset",
+    "build:sample": "tsx scripts/build-sample.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.3",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "three": "^0.186.1",
+    "unpdf": "^1.8.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64",
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/three": "^0.186.0",
+    "dotenv": "^18.0.7",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.0",
+    "supabase": "^2.120.0",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.0.4"
+  }
+}
