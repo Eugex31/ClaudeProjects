@@ -1,6 +1,7 @@
 "use client";
 import { Editor } from "./Editor";
 import { RecordButton } from "./RecordButton";
+import { ShareControls } from "./ShareControls";
 import { canEdit } from "@/lib/roles";
 
 type Props = Omit<React.ComponentProps<typeof Editor>, "toolbarExtras">;
@@ -10,7 +11,10 @@ export function ProjectEditor(props: Props) {
     <Editor
       {...props}
       toolbarExtras={({ approved, steps, parts, project }) => (
-        <RecordButton project={project} steps={steps} parts={parts} modelUrl={props.modelUrl} approved={approved} canUpload={canEdit(props.role)} />
+        <>
+          <RecordButton project={project} steps={steps} parts={parts} modelUrl={props.modelUrl} approved={approved} canUpload={canEdit(props.role)} />
+          <ShareControls projectId={project.id} initialToken={project.share_token} approved={approved} editable={canEdit(props.role)} />
+        </>
       )}
     />
   );
