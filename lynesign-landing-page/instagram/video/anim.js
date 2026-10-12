@@ -168,6 +168,128 @@ function draw(t) {
   }
 }
 
+async function renderAudio() {
+  const SR = 48000, D = DUR, BEAT = 0.5;
+  const oc = new OfflineAudioContext(2, SR * D, SR);
+  const master = oc.createGain();
+  const comp = oc.createDynamicsCompressor();
+  comp.threshold.value = -16; comp.knee.value = 24; comp.ratio.value = 3.5; comp.attack.value = 0.005; comp.release.value = 0.2;
+  master.connect(comp); comp.connect(oc.destination);
+  master.gain.setValueAtTime(0, 0);
+  master.gain.linearRampToValueAtTime(0.9, 0.5);
+  master.gain.setValueAtTime(0.9, D - 1.4);
+  master.gain.linearRampToValueAtTime(0, D);
+  const noiseBuf = oc.createBuffer(1, SR * 2, SR);
+  { const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; }
+  const env = (g, t, a, peak, rel) => {
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(peak, t + a);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + a + rel);
+  };
+  const tone = (type, f, t, dur, peak, o = {}) => {
+    const { a = 0.005, f2 = null } = o;
+    const os = oc.createOscillator(); os.type = type; os.frequency.setValueAtTime(f, t);
+    if (f2) os.frequency.exponentialRampToValueAtTime(f2, t + a + dur);
+    const g = oc.createGain(); env(g, t, a, peak, dur);
+    os.connect(g); g.connect(master); os.start(t); os.stop(t + a + dur + 0.05);
+  };
+  const noise = (t, dur, o = {}) => {
+    const { type = 'bandpass', f = 2000, f2 = null, q = 1, peak = 0.1, a = 0.005 } = o;
+    const s = oc.createBufferSource(); s.buffer = noiseBuf;
+    const fl = oc.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, t); fl.Q.value = q;
+    if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + a + dur);
+    const g = oc.createGain(); env(g, t, a, peak, dur);
+    s.connect(fl); fl.connect(g); g.connect(master); s.start(t, Math.random()); s.stop(t + a + dur + 0.05);
+  };
+  const riser = (tEnd, dur, peak = 0.2) => noise(tEnd - dur, dur * 0.2, { f: 300, f2: 5200, q: 2, peak, a: dur * 0.8 });
+  const pad = (freqs, t0, t1) => {
+    for (const f of freqs) for (const det of [-7, 7]) {
+      const os = oc.createOscillator(); os.type = 'triangle'; os.frequency.value = f; os.detune.value = det;
+      const lp = oc.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1300;
+      const g = oc.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(0.045, t0 + 0.7);
+      g.gain.setValueAtTime(0.045, Math.max(t0 + 0.7, t1 - 0.2));
+      g.gain.linearRampToValueAtTime(0.0001, t1 + 0.6);
+      os.connect(lp); lp.connect(g); g.connect(master); os.start(t0); os.stop(t1 + 0.7);
+    }
+  };
+
+  const chords = [
+    [0, 4, [220, 261.63, 329.63], 55], [4, 8, [174.61, 220, 261.63], 43.65],
+    [8, 12, [261.63, 329.63, 392], 65.41], [12, 16, [196, 246.94, 293.66], 49],
+    [16, 18.25, [220, 261.63, 329.63], 55], [18.25, 20.5, [174.61, 220, 261.63], 43.65],
+    [20.5, 24, [261.63, 329.63, 392, 523.25], 65.41]
+  ];
+  chords.forEach(([a, b, f]) => pad(f, a, b));
+  const chordAt = t => chords.find(c => t >= c[0] && t < c[1]) || chords[chords.length - 1];
+
+  // bass pulse from the problem scene on, fuller once the beat starts
+  for (let t = 3.5; t < 20.5; t += BEAT) {
+    const c = chordAt(t);
+    tone('sine', c[3] * 2, t, 0.42, t < 8 ? 0.10 : 0.20);
+    tone('triangle', c[3] * 4, t, 0.2, t < 8 ? 0.015 : 0.03);
+  }
+  // beat for the venue montage and stats
+  for (let t = 8, i = 0; t < 20.5; t += BEAT, i++) {
+    tone('sine', 150, t, 0.25, 0.55, { a: 0.002, f2: 45 });
+    if (i % 2 === 1) noise(t, 0.12, { type: 'bandpass', f: 1600, q: 0.8, peak: 0.16 });
+  }
+  for (let t = 8, i = 0; t < 20.5; t += 0.25, i++) {
+    noise(t, 0.05, { type: 'highpass', f: 7500, peak: i % 2 === 0 ? 0.07 : 0.04 });
+    const c = chordAt(t), pat = [0, 1, 2, 1][i % 4];
+    tone('triangle', c[2][pat] * 2, t, 0.22, 0.045);
+  }
+  // scene transitions
+  riser(3.5, 0.7); riser(8, 0.8, 0.24); riser(16, 0.7); riser(20.5, 0.9, 0.28);
+  tone('sine', 110, 20.5, 1.3, 0.6, { f2: 40 });
+  noise(20.5, 1.2, { type: 'highpass', f: 3000, peak: 0.2 });
+  // hook and problem text
+  [0.15, 0.45, 0.8].forEach(t => tone('sine', 1200, t + 0.02, 0.06, 0.08));
+  noise(1.4, 0.4, { f: 800, f2: 3500, q: 3, peak: 0.08, a: 0.05 });
+  [3.7, 4.3, 4.9, 6.2, 6.55].forEach(t => tone('sine', 1000, t, 0.06, 0.06));
+  [4.4, 5.0, 5.6].forEach(t => noise(t, 0.28, { f: 3000, f2: 700, q: 2.5, peak: 0.14, a: 0.01 }));
+  // venue pops
+  [8, 10, 12, 14].forEach(t => { tone('sine', 700, t, 0.1, 0.14, { f2: 350 }); noise(t, 0.06, { type: 'highpass', f: 6000, peak: 0.06 }); });
+  // stat count ticks, rising in pitch
+  for (let i = 0; i < 24; i++) tone('sine', 900 + i * 40, 16.3 + i * (1.2 / 24), 0.03, 0.06);
+  for (let i = 0; i < 20; i++) tone('sine', 900 + i * 45, 18.1 + i * (1.0 / 20), 0.03, 0.06);
+  // call to action
+  [21.0, 21.35].forEach(t => tone('sine', 1000, t, 0.06, 0.06));
+  [1046.5, 1318.5, 1568, 2093].forEach((f, i) => tone('sine', f, 21.8 + i * 0.07, 1.6, 0.07, { a: 0.01 }));
+
+  const buf = await oc.startRendering();
+  const L = buf.getChannelData(0), R = buf.getChannelData(1);
+  let peak = 0, sum = 0;
+  for (let i = 0; i < L.length; i++) { const a = Math.max(Math.abs(L[i]), Math.abs(R[i])); if (a > peak) peak = a; sum += L[i] * L[i]; }
+  const drive = 2.2, norm = Math.tanh(drive);
+  let sum2 = 0, peak2 = 0;
+  for (let i = 0; i < L.length; i++) {
+    L[i] = Math.tanh(drive * L[i] / (peak || 1)) / norm * 0.89;
+    R[i] = Math.tanh(drive * R[i] / (peak || 1)) / norm * 0.89;
+    sum2 += L[i] * L[i]; if (Math.abs(L[i]) > peak2) peak2 = Math.abs(L[i]);
+  }
+  console.log('audio peak before', peak.toFixed(3), 'after', peak2.toFixed(3), 'rms after', Math.sqrt(sum2 / L.length).toFixed(3));
+  return { L, R, SR };
+}
+
+async function encodeAudio(muxer, aud) {
+  const cfg = { codec: 'mp4a.40.2', sampleRate: aud.SR, numberOfChannels: 2, bitrate: 160000 };
+  const sup = await AudioEncoder.isConfigSupported(cfg);
+  if (!sup.supported) throw new Error('AAC audio encoding not supported in this Chrome');
+  const enc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: e => { throw e; } });
+  enc.configure(cfg);
+  const CH = 4800;
+  for (let off = 0; off < aud.L.length; off += CH) {
+    const n = Math.min(CH, aud.L.length - off);
+    const data = new Float32Array(n * 2);
+    data.set(aud.L.subarray(off, off + n), 0); data.set(aud.R.subarray(off, off + n), n);
+    const ad = new AudioData({ format: 'f32-planar', sampleRate: aud.SR, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round(off * 1e6 / aud.SR), data });
+    enc.encode(ad); ad.close();
+  }
+  await enc.flush();
+}
+
 window.VID = {
   W, H, FPS, DUR,
   async init(assets) {
@@ -180,7 +302,8 @@ window.VID = {
     const url = URL.createObjectURL(new Blob([muxerSrc], { type: 'text/javascript' }));
     const { Muxer, ArrayBufferTarget } = await import(url);
     const target = new ArrayBufferTarget();
-    const muxer = new Muxer({ target, video: { codec: 'avc', width: W, height: H }, fastStart: 'in-memory' });
+    const muxer = new Muxer({ target, video: { codec: 'avc', width: W, height: H }, audio: { codec: 'aac', numberOfChannels: 2, sampleRate: 48000 }, fastStart: 'in-memory' });
+    await encodeAudio(muxer, await renderAudio());
     const cfg = { codec: 'avc1.640029', width: W, height: H, bitrate: 5_000_000, framerate: FPS };
     const sup = await VideoEncoder.isConfigSupported(cfg);
     if (!sup.supported) throw new Error('H.264 encoding not supported in this Chrome');
