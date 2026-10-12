@@ -5,10 +5,18 @@ import { normalizeManualText } from "@/lib/manual";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { assetId } = await request.json();
+  let assetId: unknown;
+  try {
+    ({ assetId } = await request.json());
+  } catch {
+    assetId = undefined;
+  }
+  if (typeof assetId !== "string" || !assetId) {
+    return NextResponse.json({ error: "assetId is required" }, { status: 400 });
+  }
   const supabase = await createClient();
   const { data: asset } = await supabase.from("assets")
-    .select("storage_path, org_id").eq("id", assetId).eq("project_id", id).eq("kind", "manual").single();
+    .select("storage_path").eq("id", assetId).eq("project_id", id).eq("kind", "manual").single();
   if (!asset) return NextResponse.json({ error: "Manual not found" }, { status: 404 });
 
   const { data: file, error } = await supabase.storage.from("org-files").download(asset.storage_path);
@@ -25,7 +33,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!text) {
     return NextResponse.json({ error: "No text found in this PDF (it may be scanned images). Paste the manual text instead." }, { status: 422 });
   }
-  const { error: upErr } = await supabase.from("storyboards").update({ manual_text: text }).eq("project_id", id);
-  if (upErr) return NextResponse.json({ error: upErr.message }, { status: 403 });
+  const { data: updated, error: upErr } = await supabase.from("storyboards")
+    .update({ manual_text: text }).eq("project_id", id).select("project_id");
+  if (upErr || !updated || updated.length === 0) {
+    return NextResponse.json({ error: "You don't have permission to edit this project." }, { status: 403 });
+  }
   return NextResponse.json({ chars: text.length });
 }

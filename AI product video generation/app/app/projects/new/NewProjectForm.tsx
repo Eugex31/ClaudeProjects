@@ -22,6 +22,7 @@ export function NewProjectForm({ orgId }: { orgId: string }) {
     const pdf = form.get("pdf") as File | null;
     const pasted = String(form.get("text") ?? "");
 
+    if (!name) return setStatus("Please enter a product name.");
     if (!model?.name.toLowerCase().endsWith(".glb")) return setStatus("Please choose a .glb model file.");
     if (model.size > MAX_MODEL_BYTES) return setStatus("Model is larger than 50 MB.");
     const hasPdf = pdf && pdf.size > 0;
@@ -40,23 +41,27 @@ export function NewProjectForm({ orgId }: { orgId: string }) {
       const { data: project, error } = await supabase.from("projects").insert({ org_id: orgId, name, language }).select().single();
       if (error) throw error;
       const { error: sbErr } = await supabase.from("storyboards").insert({
-        project_id: project.id, org_id: orgId, parts, steps: [], manual_text: hasPdf ? "" : normalizeManualText(pasted),
+        project_id: project.id, org_id: orgId, parts, steps: [], manual_text: normalizeManualText(pasted),
       });
       if (sbErr) throw sbErr;
 
-      setStatus("Uploading model…");
-      await uploadAsset(project.id, "model", model);
+      try {
+        setStatus("Uploading model…");
+        await uploadAsset(project.id, "model", model);
 
-      if (hasPdf) {
-        setStatus("Uploading and reading manual…");
-        const assetId = await uploadAsset(project.id, "manual", pdf);
-        const res = await fetch(`/api/projects/${project.id}/manual`, {
-          method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ assetId }),
-        });
-        if (!res.ok) {
-          const body = await res.json();
-          alert(`${body.error} You can paste the text in the editor.`);
+        if (hasPdf) {
+          setStatus("Uploading and reading manual…");
+          const assetId = await uploadAsset(project.id, "manual", pdf);
+          const res = await fetch(`/api/projects/${project.id}/manual`, {
+            method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ assetId }),
+          });
+          if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            alert(`${body.error ?? "The manual could not be read."} You can paste the text in the editor.`);
+          }
         }
+      } catch (err) {
+        alert(`${err instanceof Error ? err.message : "An upload failed."} The project was created; finish setup in the editor.`);
       }
       router.push(`/app/projects/${project.id}`);
     } catch (err) {
