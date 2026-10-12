@@ -22,6 +22,6 @@ test("sample storyboard places every part exactly once with no issues", () => {
 test("exported GLB keeps the same part ids", async () => {
   const buf = readFileSync("public/sample/bookshelf.glb");
   const gltf = await new GLTFLoader().parseAsync(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), "");
-  const ids = assignPartIds(gltf.scene).map((m) => m.name).sort();
+  const ids = assignPartIds(gltf.scene).map((o) => o.name).sort();
   expect(ids).toEqual(extractManifest(buildBookshelf()).map((p) => p.id).sort());
 });

@@ -2,19 +2,20 @@ import * as THREE from "three";
 import type { PartManifest, Step, Vec3 } from "@/lib/storyboard/types";
 import { buildTimeline, easeOutCubic, FLY_IN_SECONDS, locate, type Timeline } from "@/lib/player/timeline";
 import { cameraPosition, type Bounds } from "@/lib/player/camera";
-import { partMeshes } from "./manifest";
+import { partObjects } from "./manifest";
 import { loadGlb } from "./loadGlb";
 
 const HIGHLIGHT = new THREE.Color(0xff8a00);
 const CAMERA_EASE_SECONDS = 1;
 
-type PartState = { mesh: THREE.Mesh; basePosition: THREE.Vector3; materials: THREE.MeshStandardMaterial[] };
+type PartState = { object: THREE.Object3D; basePosition: THREE.Vector3; materials: THREE.MeshStandardMaterial[] };
 
 export class AssemblyScene {
   readonly renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
   private camera = new THREE.PerspectiveCamera(40, 16 / 9, 0.01, 1000);
   private parts = new Map<string, PartState>();
+  private partIdOf = new Map<THREE.Object3D, string>();
   private bounds: Bounds = { center: [0, 0, 0], radius: 1 };
   private raycaster = new THREE.Raycaster();
   private root: THREE.Object3D | null = null;
@@ -41,16 +42,22 @@ export class AssemblyScene {
     this.root = root;
     this.scene.add(root);
     root.updateMatrixWorld(true);
-    for (const [id, mesh] of partMeshes(root)) {
-      const source = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-      this.originals.push(...source);
-      const materials = source.map((m) => {
-        const std = m instanceof THREE.MeshStandardMaterial ? m.clone() : new THREE.MeshStandardMaterial({ color: "color" in m && m.color instanceof THREE.Color ? m.color : 0xcccccc });
-        std.transparent = true;
-        return std;
-      });
-      mesh.material = materials.length === 1 ? materials[0] : materials;
-      this.parts.set(id, { mesh, basePosition: mesh.position.clone(), materials });
+    const objects = partObjects(root);
+    for (const [id, object] of objects) this.partIdOf.set(object, id);
+    for (const [id, object] of objects) {
+      const materials: THREE.MeshStandardMaterial[] = [];
+      for (const mesh of this.ownMeshes(object)) {
+        const source = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+        this.originals.push(...source);
+        const replaced = source.map((m) => {
+          const std = m instanceof THREE.MeshStandardMaterial ? m.clone() : new THREE.MeshStandardMaterial({ color: "color" in m && m.color instanceof THREE.Color ? m.color : 0xcccccc });
+          std.transparent = true;
+          return std;
+        });
+        mesh.material = replaced.length === 1 ? replaced[0] : replaced;
+        materials.push(...replaced);
+      }
+      this.parts.set(id, { object, basePosition: object.position.clone(), materials });
     }
     const sphere = new THREE.Box3().setFromObject(root).getBoundingSphere(new THREE.Sphere());
     this.bounds = { center: sphere.center.toArray() as Vec3, radius: sphere.radius || 1 };
@@ -80,9 +87,9 @@ export class AssemblyScene {
 
     for (const [id, part] of this.parts) {
       const offset = animating.get(id);
-      part.mesh.visible = visible.has(id) || offset !== undefined;
-      part.mesh.position.copy(part.basePosition);
-      if (offset) part.mesh.position.add(this.worldOffsetToLocal(part.mesh, offset).multiplyScalar(1 - progress));
+      part.object.visible = visible.has(id) || offset !== undefined;
+      part.object.position.copy(part.basePosition);
+      if (offset) part.object.position.add(this.worldOffsetToLocal(part.object, offset).multiplyScalar(1 - progress));
       this.styleMaterials(part, 1, offset ? glow : 0);
     }
 
@@ -99,8 +106,8 @@ export class AssemblyScene {
     this.timeline.steps.slice(0, index + 1).forEach((s) => s.step.parts.forEach((p) => placed.add(p)));
     const sel = new Set(selected);
     for (const [id, part] of this.parts) {
-      part.mesh.visible = true;
-      part.mesh.position.copy(part.basePosition);
+      part.object.visible = true;
+      part.object.position.copy(part.basePosition);
       this.styleMaterials(part, placed.has(id) || sel.has(id) ? 1 : 0.15, sel.has(id) ? 0.8 : 0);
     }
     const preset = this.timeline.steps[index]?.step.camera ?? "iso";
@@ -112,9 +119,17 @@ export class AssemblyScene {
     const rect = this.canvas.getBoundingClientRect();
     const ndc = new THREE.Vector2(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
     this.raycaster.setFromCamera(ndc, this.camera);
-    const meshes = [...this.parts.values()].filter((p) => p.mesh.visible).map((p) => p.mesh);
-    const hit = this.raycaster.intersectObjects(meshes, false)[0];
-    return hit ? hit.object.name : null;
+    const visible = [...this.parts.values()].filter((p) => p.object.visible).map((p) => p.object);
+    // Recursive: a part may be a group of primitive meshes. Map the hit mesh up to its part root.
+    for (const hit of this.raycaster.intersectObjects(visible, true)) {
+      for (let o: THREE.Object3D | null = hit.object; o; o = o.parent) {
+        const id = this.partIdOf.get(o);
+        if (id === undefined) continue;
+        if (o.visible) return id;
+        break; // hit a hidden nested part: try the next intersection
+      }
+    }
+    return null;
   }
 
   dispose() {
@@ -128,6 +143,7 @@ export class AssemblyScene {
       this.root = null;
     }
     this.parts.clear();
+    this.partIdOf.clear();
     this.originals = [];
     this.renderer.dispose();
   }
@@ -151,9 +167,21 @@ export class AssemblyScene {
     this.camera.lookAt(...this.bounds.center);
   }
 
-  private worldOffsetToLocal(mesh: THREE.Mesh, offset: Vec3): THREE.Vector3 {
-    const parent = mesh.parent!;
-    const worldBase = parent.localToWorld(mesh.position.clone());
+  /** Meshes belonging to this part, not descending into nested parts (they have their own state). */
+  private ownMeshes(part: THREE.Object3D): THREE.Mesh[] {
+    const out: THREE.Mesh[] = [];
+    const visit = (o: THREE.Object3D) => {
+      if (o !== part && this.partIdOf.has(o)) return;
+      if (o instanceof THREE.Mesh) out.push(o);
+      o.children.forEach(visit);
+    };
+    visit(part);
+    return out;
+  }
+
+  private worldOffsetToLocal(object: THREE.Object3D, offset: Vec3): THREE.Vector3 {
+    const parent = object.parent!;
+    const worldBase = parent.localToWorld(object.position.clone());
     const a = parent.worldToLocal(worldBase.clone());
     const b = parent.worldToLocal(worldBase.add(new THREE.Vector3(...offset)));
     return b.sub(a);

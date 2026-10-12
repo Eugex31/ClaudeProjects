@@ -12,7 +12,8 @@
     "test:e2e": "playwright test",
     "db:start": "supabase start",
     "db:reset": "supabase db reset",
-    "build:sample": "tsx scripts/build-sample.ts"
+    "build:sample": "tsx scripts/build-sample.ts",
+    "copy:draco": "tsx scripts/copy-draco.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
