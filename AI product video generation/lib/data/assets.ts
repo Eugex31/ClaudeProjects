@@ -14,7 +14,9 @@ export async function modelUrlFor(supabase: SupabaseClient, storagePath: string)
 }
 
 export function isScopedModelPath(path: string, orgId: string, projectId: string): boolean {
-  return resolveSamplePath(path) !== null || path.startsWith(`${orgId}/${projectId}/`);
+  if (resolveSamplePath(path) !== null) return true;
+  const prefix = `${orgId}/${projectId}/`;
+  return path.startsWith(prefix) && /^[A-Za-z0-9_-][A-Za-z0-9._-]*$/.test(path.slice(prefix.length));
 }
 
 export function newestModel<T extends { kind: string; created_at: string }>(assets: T[]): T | undefined {

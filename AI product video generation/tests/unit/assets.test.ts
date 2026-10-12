@@ -13,3 +13,11 @@ test("scoped model paths", () => {
   expect(isScopedModelPath("o/p2/1-file.glb", "o", "p")).toBe(false);
   expect(isScopedModelPath("sample:../x", "o", "p")).toBe(false);
 });
+
+import { assetPath } from "@/lib/manual";
+test("scoped model paths allow exactly one safe segment", () => {
+  expect(isScopedModelPath(assetPath("o", "p", "11111111-2222", "my model (1).glb"), "o", "p")).toBe(true);
+  for (const rest of ["../../v/q/secret.glb", "%2e%2e/%2E%2E/v/q/x.glb", "%2E%2E", "..", "./x.glb", "x.glb/", "a/b.glb", "", ".hidden", "a%2fb"]) {
+    expect(isScopedModelPath(`o/p/${rest}`, "o", "p")).toBe(false);
+  }
+});

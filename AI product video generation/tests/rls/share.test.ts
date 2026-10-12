@@ -60,3 +60,14 @@ test("a viewer cannot create a share link", async () => {
   const { data } = await v.client.from("projects").update({ share_token: "c".repeat(32) }).eq("id", p!.id).is("share_token", null).select("id");
   expect(data ?? []).toHaveLength(0);
 });
+
+test("asset paths with traversal segments are rejected", async () => {
+  const { data: p } = await client.from("projects").select("org_id").eq("id", projectId).single();
+  for (const rest of ["../../x/y/secret.glb", "%2e%2e/%2E%2E/x/y/secret.glb", "a/b.glb", "x.glb/"]) {
+    const { error } = await client.from("assets").insert({
+      org_id: p!.org_id, project_id: projectId, kind: "model",
+      storage_path: `${p!.org_id}/${projectId}/${rest}`, filename: "f.glb",
+    });
+    expect(error, rest).not.toBeNull();
+  }
+});
