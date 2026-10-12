@@ -27,3 +27,22 @@ test("signup → sample → preview → share → public player", async ({ page,
   await expect(pub.getByText("Step 1 / 7")).toBeVisible({ timeout: 15_000 });
   await anon.close();
 });
+
+test("edit → save resets approval → approve the saved version", async ({ page }) => {
+  await page.goto("/signup");
+  await page.getByPlaceholder("you@company.com").fill(`e2e-approve-${Date.now()}@test.dev`);
+  await page.getByPlaceholder("Password (8+ characters)").fill("e2e-password-123");
+  await page.getByRole("button", { name: "Sign up" }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await page.getByRole("link", { name: /Sample: 3-shelf bookshelf/ }).click();
+  await expect(page.getByText("approved", { exact: true })).toBeVisible();
+
+  await page.getByLabel("Title").fill("Lay out the bottom panel");
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.getByText("draft", { exact: true })).toBeVisible();
+
+  await page.getByRole("button", { name: "Approve" }).click();
+  await expect(page.getByText("Approved. You can now record and share the video.")).toBeVisible();
+  await page.reload();
+  await expect(page.getByText("approved", { exact: true })).toBeVisible();
+});
