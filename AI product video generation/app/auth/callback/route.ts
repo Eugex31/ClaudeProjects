@@ -1,13 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { safeNext } from "@/lib/safeNext";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
-  const next = request.nextUrl.searchParams.get("next") ?? "/app";
-  const safeNext = next.startsWith("/") && !next.startsWith("//") ? next : "/app";
+  const target = safeNext(request.nextUrl.searchParams.get("next"));
   if (code) {
     const supabase = await createClient();
-    await supabase.auth.exchangeCodeForSession(code);
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (error) {
+      return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error.message)}`, request.url));
+    }
   }
-  return NextResponse.redirect(new URL(safeNext, request.url));
+  return NextResponse.redirect(new URL(target, request.url));
 }

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/client";
+import { safeNext } from "@/lib/safeNext";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [email, setEmail] = useState("");
@@ -9,7 +10,7 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const router = useRouter();
-  const next = useSearchParams().get("next") ?? "/app";
+  const next = safeNext(useSearchParams().get("next"));
   const supabase = createBrowserSupabase();
   const getRedirectTo = () => `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
 
