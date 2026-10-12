@@ -18,6 +18,9 @@ returns uuid language sql immutable set search_path = '' as $$
               then split_part(object_name, '/', 1)::uuid end;
 $$;
 
+-- anon never needs direct table access (share page uses the service role)
+revoke all on all tables in schema public from anon;
+
 alter table public.organizations enable row level security;
 alter table public.memberships enable row level security;
 alter table public.invites enable row level security;
@@ -45,12 +48,16 @@ grant update (role) on public.memberships to authenticated;
 -- invites (owners only; invitees go through accept_invite)
 create policy inv_all on public.invites for all
   using (public.is_member(org_id, 'owner')) with check (public.is_member(org_id, 'owner'));
+revoke insert on public.invites from authenticated;
+grant insert (org_id, email, role) on public.invites to authenticated;
 
 -- projects
 create policy proj_select on public.projects for select using (public.is_member(org_id, 'viewer'));
 create policy proj_insert on public.projects for insert with check (public.is_member(org_id, 'editor'));
 create policy proj_update on public.projects for update using (public.is_member(org_id, 'editor'));
 create policy proj_delete on public.projects for delete using (public.is_member(org_id, 'editor'));
+revoke insert on public.projects from anon, authenticated;
+grant insert (org_id, name, language) on public.projects to authenticated;
 revoke update on public.projects from authenticated;
 grant update (name, language, status, share_token, updated_at) on public.projects to authenticated;
 
@@ -63,6 +70,8 @@ create policy asset_delete on public.assets for delete using (public.is_member(o
 create policy sb_select on public.storyboards for select using (public.is_member(org_id, 'viewer'));
 create policy sb_insert on public.storyboards for insert with check (public.is_member(org_id, 'editor'));
 create policy sb_update on public.storyboards for update using (public.is_member(org_id, 'editor'));
+revoke update on public.storyboards from anon, authenticated;
+grant update (parts, steps, manual_text) on public.storyboards to authenticated;
 
 -- usage: read-only for members; written by increment_usage (service role)
 create policy usage_select on public.usage for select using (public.is_member(org_id, 'viewer'));
@@ -109,15 +118,26 @@ end $$;
 create trigger storyboards_reset_approval before update on public.storyboards
   for each row execute function public.reset_approval_on_edit();
 
+create or replace function public.reset_approval_on_insert()
+returns trigger language plpgsql security definer set search_path = '' as $$
+begin
+  update public.projects set status = 'draft' where id = new.project_id and status = 'approved';
+  new.updated_at := now();
+  return new;
+end $$;
+create trigger storyboards_reset_approval_insert before insert on public.storyboards
+  for each row execute function public.reset_approval_on_insert();
+
 -- invites
 create or replace function public.accept_invite(invite_token text)
 returns uuid language plpgsql security definer set search_path = '' as $$
 declare inv public.invites;
 begin
+  if auth.uid() is null then raise exception 'Authentication required'; end if;
   select * into inv from public.invites
    where token = invite_token and accepted_at is null and expires_at > now();
   if inv.id is null then raise exception 'Invite is invalid or expired'; end if;
-  if lower(inv.email) <> lower((select email from auth.users where id = auth.uid())) then
+  if lower(inv.email) is distinct from lower((select email from auth.users where id = auth.uid())) then
     raise exception 'This invite was sent to a different email address';
   end if;
   insert into public.memberships (org_id, user_id, role) values (inv.org_id, auth.uid(), inv.role)
@@ -125,7 +145,8 @@ begin
   update public.invites set accepted_at = now() where id = inv.id;
   return inv.org_id;
 end $$;
-revoke execute on function public.accept_invite(text) from anon;
+revoke execute on function public.accept_invite(text) from public, anon;
+grant execute on function public.accept_invite(text) to authenticated;
 
 -- usage increment (service role only)
 create or replace function public.increment_usage(target_org uuid, target_period text)
@@ -134,3 +155,8 @@ returns void language sql security definer set search_path = '' as $$
   on conflict (org_id, period) do update set generations = public.usage.generations + 1;
 $$;
 revoke execute on function public.increment_usage(uuid, text) from public, anon, authenticated;
+
+-- trigger functions are never callable directly
+revoke execute on function public.stamp_approval() from public, anon, authenticated;
+revoke execute on function public.reset_approval_on_edit() from public, anon, authenticated;
+revoke execute on function public.reset_approval_on_insert() from public, anon, authenticated;

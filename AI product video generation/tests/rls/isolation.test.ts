@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, test } from "vitest";
-import { admin, makeUser } from "./helpers";
+import { createClient } from "@supabase/supabase-js";
+import { admin, localEnv, makeUser } from "./helpers";
 
 const run = Date.now();
 let a: Awaited<ReturnType<typeof makeUser>>;
@@ -12,8 +13,10 @@ beforeAll(async () => {
   const { data, error } = await b.client.from("projects").insert({ org_id: b.orgId, name: "B secret" }).select().single();
   if (error) throw error;
   projectB = data.id;
-  await b.client.from("storyboards").insert({ project_id: projectB, org_id: b.orgId, steps: [{ id: "s" }] });
-  await b.client.storage.from("org-files").upload(`${b.orgId}/${projectB}/x-secret.txt`, new Blob(["secret"]));
+  const sb = await b.client.from("storyboards").insert({ project_id: projectB, org_id: b.orgId, steps: [{ id: "s" }] });
+  if (sb.error) throw sb.error;
+  const up = await b.client.storage.from("org-files").upload(`${b.orgId}/${projectB}/x-secret.txt`, new Blob(["secret"]));
+  if (up.error) throw up.error;
 });
 
 describe("tenant isolation", () => {
@@ -80,6 +83,49 @@ describe("approval workflow", () => {
     await b.client.from("storyboards").insert({ project_id: p!.id, org_id: b.orgId });
     const { error } = await b.client.from("projects").update({ status: "approved" }).eq("id", p!.id);
     expect(error?.message).toMatch(/no steps/);
+  });
+});
+
+describe("approval hardening", () => {
+  test("cannot insert a project already approved", async () => {
+    const { data, error } = await b.client
+      .from("projects")
+      .insert({ org_id: b.orgId, name: "forged", status: "approved", approved_by: b.userId })
+      .select()
+      .single();
+    expect(error !== null || data!.status === "draft").toBe(true);
+  });
+
+  test("cannot re-key a storyboard to another project", async () => {
+    const { data: p1 } = await b.client.from("projects").insert({ org_id: b.orgId, name: "p1" }).select().single();
+    const { data: p2 } = await b.client.from("projects").insert({ org_id: b.orgId, name: "p2" }).select().single();
+    await b.client.from("storyboards").insert({ project_id: p1!.id, org_id: b.orgId, steps: [{ id: "x" }] });
+    const { error } = await b.client.from("storyboards").update({ project_id: p2!.id }).eq("project_id", p1!.id);
+    expect(error).not.toBeNull();
+    const { data } = await admin().from("storyboards").select("project_id").eq("project_id", p1!.id);
+    expect(data).toHaveLength(1);
+  });
+
+  test("inserting a storyboard for an approved project resets it to draft", async () => {
+    const { data: p } = await b.client.from("projects").insert({ org_id: b.orgId, name: "p3" }).select().single();
+    await admin().from("storyboards").insert({ project_id: p!.id, org_id: b.orgId, steps: [{ id: "x" }] });
+    await admin().from("projects").update({ status: "approved", approved_by: b.userId }).eq("id", p!.id);
+    await admin().from("storyboards").delete().eq("project_id", p!.id);
+    const { error } = await b.client.from("storyboards").insert({ project_id: p!.id, org_id: b.orgId, steps: [{ id: "new" }] });
+    expect(error).toBeNull();
+    const { data } = await admin().from("projects").select("status, approved_by").eq("id", p!.id).single();
+    expect(data).toEqual({ status: "draft", approved_by: null });
+  });
+
+  test("anon cannot call accept_invite", async () => {
+    const anon = createClient(localEnv().url, localEnv().anonKey, { auth: { persistSession: false } });
+    const { error } = await anon.rpc("accept_invite", { invite_token: "x" });
+    expect(error).not.toBeNull();
+  });
+
+  test("authenticated cannot write usage directly", async () => {
+    const { error } = await a.client.from("usage").insert({ org_id: a.orgId, period: "2026-10", generations: 0 });
+    expect(error).not.toBeNull();
   });
 });
 

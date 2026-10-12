@@ -6,7 +6,7 @@ declare
   tpl public.sample_templates;
 begin
   insert into public.organizations (name)
-  values (left(split_part(new.email, '@', 1), 80) || '''s workspace')
+  values (left(coalesce(nullif(split_part(new.email, '@', 1), ''), 'My'), 80) || '''s workspace')
   returning id into new_org;
 
   insert into public.memberships (org_id, user_id, role) values (new_org, new.id, 'owner');
@@ -31,3 +31,5 @@ end $$;
 
 create trigger on_auth_user_created after insert on auth.users
   for each row execute function public.handle_new_user();
+
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
