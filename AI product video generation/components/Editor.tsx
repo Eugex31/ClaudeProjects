@@ -5,7 +5,7 @@ import { createBrowserSupabase } from "@/lib/supabase/client";
 import { validateStoryboard } from "@/lib/storyboard/validate";
 import { addStep, moveStep, removeStep, togglePart } from "@/lib/storyboard/edit";
 import { CAMERA_PRESETS, DIRECTIONS, LIMITS, type Issue, type Language, type PartManifest, type Step } from "@/lib/storyboard/types";
-import type { Role } from "@/lib/data/orgs";
+import { canEdit, type Role } from "@/lib/roles";
 import { EditorViewport } from "./EditorViewport";
 import { Player } from "./Player";
 
@@ -17,7 +17,7 @@ export function Editor(props: {
 }) {
   const router = useRouter();
   const [supabase] = useState(() => createBrowserSupabase());
-  const editable = props.role !== "viewer";
+  const editable = canEdit(props.role);
   const [steps, setSteps] = useState(props.steps);
   const [parts, setParts] = useState(props.parts);
   const [manualText, setManualText] = useState(props.manualText);
@@ -78,19 +78,28 @@ export function Editor(props: {
   }
 
   async function approve() {
-    const { error } = await supabase.from("projects").update({ status: "approved" }).eq("id", props.project.id);
+    const { data, error } = await supabase.from("projects").update({ status: "approved" }).eq("id", props.project.id).select("status");
     if (error) return setMessage(error.message);
-    setStatus("approved");
+    if (!data || data.length === 0) return setMessage("You don't have permission to approve this project.");
+    setStatus(data[0].status);
     setMessage("Approved. You can now record and share the video.");
   }
 
   async function deleteProject() {
     if (!confirm(`Delete "${props.project.name}" and all its files? This cannot be undone.`)) return;
+    if (busy) return;
+    setBusy("Deleting…");
     const { data: assets } = await supabase.from("assets").select("storage_path").eq("project_id", props.project.id);
     const paths = (assets ?? []).map((a) => a.storage_path).filter((p) => !p.startsWith("sample:"));
-    if (paths.length) await supabase.storage.from("org-files").remove(paths);
-    const { error } = await supabase.from("projects").delete().eq("id", props.project.id);
-    if (error) return setMessage(error.message);
+    const { data: deleted, error } = await supabase.from("projects").delete().eq("id", props.project.id).select("id");
+    if (error || !deleted || deleted.length === 0) {
+      setBusy(null);
+      return setMessage(error ? error.message : "You don't have permission to delete this project.");
+    }
+    if (paths.length) {
+      const { error: rmError } = await supabase.storage.from("org-files").remove(paths);
+      if (rmError) alert("Project deleted, but some files could not be removed.");
+    }
     router.push("/app");
     router.refresh();
   }

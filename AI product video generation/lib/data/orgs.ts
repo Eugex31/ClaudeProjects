@@ -3,10 +3,10 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
-export type Role = "owner" | "editor" | "viewer";
+import type { Role } from "@/lib/roles";
+export { canEdit, type Role } from "@/lib/roles";
 export type OrgSummary = { id: string; name: string; role: Role; plan: string; monthly_generation_quota: number };
 export const ORG_COOKIE = "stepreel_org";
-export const canEdit = (role: Role) => role === "owner" || role === "editor";
 
 export async function listMyOrgs(): Promise<OrgSummary[]> {
   const supabase = await createClient();

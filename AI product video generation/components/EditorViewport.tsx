@@ -26,7 +26,7 @@ export function EditorViewport({ modelUrl, steps, parts, selectedIndex, onPartCl
     window.addEventListener("resize", resize);
     s.load(modelUrl)
       .then(() => { if (!cancelled) setScene(s); })
-      .catch(() => { if (!cancelled) setError("The 3D model could not be loaded."); });
+      .catch(() => { if (!cancelled) setError("The 3D model could not be loaded (the link may have expired)."); });
     return () => {
       cancelled = true;
       window.removeEventListener("resize", resize);
@@ -50,7 +50,14 @@ export function EditorViewport({ modelUrl, steps, parts, selectedIndex, onPartCl
           if (id && onPartClick) onPartClick(id);
         }}
       />
-      {error && <p role="alert" className="absolute inset-0 grid place-items-center text-red-700">{error}</p>}
+      {error && (
+        <div role="alert" className="absolute inset-0 grid place-items-center bg-white/80 text-center text-red-700">
+          <div>
+            <p>{error}</p>
+            <button onClick={() => window.location.reload()} className="mt-2 rounded border px-3 py-1 text-sm">Reload page</button>
+          </div>
+        </div>
+      )}
       <p className="absolute left-2 top-2 rounded bg-white/80 px-2 text-xs">Click a part to add it to / remove it from the selected step. Faded parts are not placed yet.</p>
     </div>
   );

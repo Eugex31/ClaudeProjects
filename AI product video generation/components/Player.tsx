@@ -49,7 +49,7 @@ export function Player({ modelUrl, steps, manifest, language }: {
         setTimeline(s.timeline);
         setScene(s);
       })
-      .catch(() => { if (!cancelled) setError("The 3D model could not be loaded."); });
+      .catch(() => { if (!cancelled) setError("The 3D model could not be loaded (the link may have expired)."); });
     return () => {
       cancelled = true;
       window.removeEventListener("resize", resize);
@@ -104,7 +104,14 @@ export function Player({ modelUrl, steps, manifest, language }: {
       <div className="relative aspect-video w-full overflow-hidden rounded bg-zinc-100">
         <canvas ref={canvasRef} className="h-full w-full" />
         <Captions caption={caption} />
-        {error && <p role="alert" className="absolute inset-0 grid place-items-center text-red-700">{error}</p>}
+        {error && (
+          <div role="alert" className="absolute inset-0 grid place-items-center bg-white/80 text-center text-red-700">
+            <div>
+              <p>{error}</p>
+              <button onClick={() => window.location.reload()} className="mt-2 rounded border px-3 py-1 text-sm">Reload page</button>
+            </div>
+          </div>
+        )}
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
         <button disabled={!ready} onClick={() => jump(index - 1)} className="rounded border px-2 py-1">◀ Prev</button>
