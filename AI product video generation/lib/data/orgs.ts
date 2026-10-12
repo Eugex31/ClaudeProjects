@@ -20,8 +20,8 @@ export async function listMyOrgs(): Promise<OrgSummary[]> {
   return (data ?? []).map((m: any) => ({ ...m.organizations, role: m.role }));
 }
 
-export async function getCurrentOrg(): Promise<OrgSummary> {
-  const orgs = await listMyOrgs();
+export async function getCurrentOrg(provided?: OrgSummary[]): Promise<OrgSummary> {
+  const orgs = provided ?? await listMyOrgs();
   if (orgs.length === 0) throw new Error("Your account has no workspace. Contact support.");
   const wanted = (await cookies()).get(ORG_COOKIE)?.value;
   return orgs.find((o) => o.id === wanted) ?? orgs[0];

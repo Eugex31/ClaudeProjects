@@ -4,7 +4,8 @@ import { OrgSwitcher } from "./OrgSwitcher";
 import { signOut } from "./actions";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const [orgs, current] = await Promise.all([listMyOrgs(), getCurrentOrg()]);
+  const orgs = await listMyOrgs();
+  const current = await getCurrentOrg(orgs);
   return (
     <div className="min-h-screen">
       <header className="flex items-center gap-4 border-b px-6 py-3">

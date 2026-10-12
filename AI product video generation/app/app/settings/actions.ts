@@ -31,12 +31,25 @@ export async function changeRole(formData: FormData) {
   const { org, supabase } = await ownerContext();
   const role = String(formData.get("role"));
   if (!["owner", "editor", "viewer"].includes(role)) return;
-  await supabase.from("memberships").update({ role }).eq("org_id", org.id).eq("user_id", String(formData.get("userId")));
+  const userId = String(formData.get("userId"));
+  await assertNotSelf(supabase, userId);
+  const { data, error } = await supabase.from("memberships").update({ role }).eq("org_id", org.id).eq("user_id", userId).select();
+  if (error) throw error;
+  if (!data?.length) throw new Error("Member not found or not permitted");
   revalidatePath("/app/settings");
 }
 
 export async function removeMember(formData: FormData) {
   const { org, supabase } = await ownerContext();
-  await supabase.from("memberships").delete().eq("org_id", org.id).eq("user_id", String(formData.get("userId")));
+  const userId = String(formData.get("userId"));
+  await assertNotSelf(supabase, userId);
+  const { data, error } = await supabase.from("memberships").delete().eq("org_id", org.id).eq("user_id", userId).select();
+  if (error) throw error;
+  if (!data?.length) throw new Error("Member not found or not permitted");
   revalidatePath("/app/settings");
+}
+
+async function assertNotSelf(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user?.id === userId) throw new Error("You can't change or remove your own membership");
 }
