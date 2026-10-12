@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { modelUrlFor } from "@/lib/data/assets";
-import { Editor } from "@/components/Editor";
+import { ProjectEditor } from "@/components/ProjectEditor";
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -22,7 +22,7 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   if (!model) return <p>This project has no model. Delete it and create it again.</p>;
   const modelUrl = await modelUrlFor(supabase, model.storage_path);
   return (
-    <Editor
+    <ProjectEditor
       project={{ id: project.id, name: project.name, language: project.language, status: project.status, share_token: project.share_token, org_id: project.org_id }}
       role={membership.role}
       parts={sb?.parts ?? []}
