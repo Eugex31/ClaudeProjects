@@ -17,6 +17,9 @@ export class AssemblyScene {
   private parts = new Map<string, PartState>();
   private bounds: Bounds = { center: [0, 0, 0], radius: 1 };
   private raycaster = new THREE.Raycaster();
+  private root: THREE.Object3D | null = null;
+  private disposed = false;
+  private originals: THREE.Material[] = [];
   timeline: Timeline = { steps: [], total: 0, extent: 1 };
 
   constructor(private canvas: HTMLCanvasElement, opts: { preserveDrawingBuffer?: boolean } = {}) {
@@ -31,12 +34,18 @@ export class AssemblyScene {
 
   async load(url: string) {
     const root = await loadGlb(url);
+    if (this.disposed) {
+      this.disposeObject(root);
+      return;
+    }
+    this.root = root;
     this.scene.add(root);
     root.updateMatrixWorld(true);
     for (const [id, mesh] of partMeshes(root)) {
       const source = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+      this.originals.push(...source);
       const materials = source.map((m) => {
-        const std = m instanceof THREE.MeshStandardMaterial ? m.clone() : new THREE.MeshStandardMaterial({ color: (m as any).color ?? 0xcccccc });
+        const std = m instanceof THREE.MeshStandardMaterial ? m.clone() : new THREE.MeshStandardMaterial({ color: "color" in m && m.color instanceof THREE.Color ? m.color : 0xcccccc });
         std.transparent = true;
         return std;
       });
@@ -61,6 +70,7 @@ export class AssemblyScene {
   }
 
   renderAt(t: number) {
+    if (this.disposed) return;
     const { index, local } = locate(this.timeline, t);
     const entry = this.timeline.steps[index];
     const visible = new Set(entry?.visibleBefore ?? []);
@@ -84,6 +94,7 @@ export class AssemblyScene {
   }
 
   renderStepEnd(index: number, selected: string[]) {
+    if (this.disposed) return;
     const placed = new Set<string>();
     this.timeline.steps.slice(0, index + 1).forEach((s) => s.step.parts.forEach((p) => placed.add(p)));
     const sel = new Set(selected);
@@ -107,8 +118,33 @@ export class AssemblyScene {
   }
 
   dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.parts.forEach((p) => p.materials.forEach((m) => this.disposeMaterial(m)));
+    this.originals.forEach((m) => this.disposeMaterial(m));
+    if (this.root) {
+      this.scene.remove(this.root);
+      this.disposeObject(this.root);
+      this.root = null;
+    }
+    this.parts.clear();
+    this.originals = [];
     this.renderer.dispose();
-    this.parts.forEach((p) => p.materials.forEach((m) => m.dispose()));
+    this.renderer.forceContextLoss();
+  }
+
+  private disposeMaterial(m: THREE.Material) {
+    for (const value of Object.values(m)) if (value instanceof THREE.Texture) value.dispose();
+    m.dispose();
+  }
+
+  private disposeObject(root: THREE.Object3D) {
+    root.traverse((obj) => {
+      if (!(obj instanceof THREE.Mesh)) return;
+      obj.geometry.dispose();
+      const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+      mats.forEach((m) => this.disposeMaterial(m));
+    });
   }
 
   private placeCamera(position: THREE.Vector3) {

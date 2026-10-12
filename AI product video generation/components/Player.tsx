@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AssemblyScene } from "@/lib/three/scene";
 import { captionFor } from "@/lib/player/captions";
-import { locate } from "@/lib/player/timeline";
+import { locate, type Timeline } from "@/lib/player/timeline";
 import { speak, stopSpeaking } from "@/lib/player/speech";
 import type { Language, PartManifest, Step } from "@/lib/storyboard/types";
 import { Captions } from "./Captions";
@@ -11,40 +11,65 @@ export function Player({ modelUrl, steps, manifest, language }: {
   modelUrl: string; steps: Step[]; manifest: PartManifest; language: Language;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const sceneRef = useRef<AssemblyScene | null>(null);
   const timeRef = useRef(0);
-  const [ready, setReady] = useState(false);
+  const lastIndexRef = useRef(-1);
+  const [scene, setScene] = useState<AssemblyScene | null>(null);
+  const [timeline, setTimeline] = useState<Timeline | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [playing, setPlaying] = useState(false);
   const [speed, setSpeed] = useState(1);
   const [index, setIndex] = useState(0);
+  const [inputs, setInputs] = useState({ modelUrl, steps, manifest });
+  if (inputs.modelUrl !== modelUrl || inputs.steps !== steps || inputs.manifest !== manifest) {
+    // Reset playback state when the inputs change (adjusting state during render).
+    setInputs({ modelUrl, steps, manifest });
+    setScene(null);
+    setTimeline(null);
+    setError(null);
+    setPlaying(false);
+    setIndex(0);
+  }
+  const ready = scene !== null && timeline !== null && timeline.steps.length > 0;
 
   useEffect(() => {
+    timeRef.current = 0;
+    lastIndexRef.current = -1;
+    stopSpeaking();
+    let cancelled = false;
     const canvas = canvasRef.current!;
-    const scene = new AssemblyScene(canvas);
-    sceneRef.current = scene;
-    const resize = () => scene.resize(canvas.clientWidth, canvas.clientHeight);
+    const s = new AssemblyScene(canvas);
+    const resize = () => s.resize(canvas.clientWidth, canvas.clientHeight);
     resize();
     window.addEventListener("resize", resize);
-    scene.load(modelUrl)
-      .then(() => { scene.setStoryboard(steps, manifest); scene.renderAt(0); setReady(true); })
-      .catch(() => setError("The 3D model could not be loaded."));
-    return () => { window.removeEventListener("resize", resize); stopSpeaking(); scene.dispose(); };
+    s.load(modelUrl)
+      .then(() => {
+        if (cancelled) return;
+        s.setStoryboard(steps, manifest);
+        s.renderAt(0);
+        setTimeline(s.timeline);
+        setScene(s);
+      })
+      .catch(() => { if (!cancelled) setError("The 3D model could not be loaded."); });
+    return () => {
+      cancelled = true;
+      window.removeEventListener("resize", resize);
+      stopSpeaking();
+      s.dispose();
+    };
   }, [modelUrl, steps, manifest]);
 
   useEffect(() => {
-    if (!playing || !ready) return;
-    const scene = sceneRef.current!;
+    if (!playing || !scene) return;
     let last = performance.now();
-    let lastIndex = -1;
     let raf = 0;
+    lastIndexRef.current = -1;
     const tick = (now: number) => {
       timeRef.current = Math.min(timeRef.current + ((now - last) / 1000) * speed, scene.timeline.total);
       last = now;
       scene.renderAt(timeRef.current);
       const { index: i } = locate(scene.timeline, timeRef.current);
-      if (i !== lastIndex) {
-        lastIndex = i;
+      if (i !== lastIndexRef.current) {
+        lastIndexRef.current = i;
         setIndex(i);
         speak(scene.timeline.steps[i]?.step.narration ?? "", language, speed);
       }
@@ -53,19 +78,27 @@ export function Player({ modelUrl, steps, manifest, language }: {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [playing, ready, speed, language]);
+  }, [playing, scene, speed, language]);
 
   function jump(i: number) {
-    const scene = sceneRef.current!;
+    if (!scene || scene.timeline.steps.length === 0) return;
     const clamped = Math.max(0, Math.min(i, scene.timeline.steps.length - 1));
-    timeRef.current = scene.timeline.steps[clamped]?.start ?? 0;
+    timeRef.current = scene.timeline.steps[clamped].start;
+    lastIndexRef.current = clamped;
     setIndex(clamped);
     stopSpeaking();
     scene.renderAt(timeRef.current);
     if (playing) speak(scene.timeline.steps[clamped].step.narration, language, speed);
   }
 
-  const caption = ready ? captionFor(sceneRef.current!.timeline, index) : null;
+  function togglePlay() {
+    if (!ready) return;
+    if (timeRef.current >= timeline.total) timeRef.current = 0;
+    if (playing) stopSpeaking();
+    setPlaying(!playing);
+  }
+
+  const caption = timeline ? captionFor(timeline, index) : null;
   return (
     <div>
       <div className="relative aspect-video w-full overflow-hidden rounded bg-zinc-100">
@@ -75,11 +108,7 @@ export function Player({ modelUrl, steps, manifest, language }: {
       </div>
       <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
         <button disabled={!ready} onClick={() => jump(index - 1)} className="rounded border px-2 py-1">◀ Prev</button>
-        <button disabled={!ready} onClick={() => {
-          if (timeRef.current >= (sceneRef.current?.timeline.total ?? 0)) timeRef.current = 0;
-          if (playing) stopSpeaking();
-          setPlaying(!playing);
-        }} className="rounded bg-black px-3 py-1 text-white">{playing ? "Pause" : "Play"}</button>
+        <button disabled={!ready} onClick={togglePlay} className="rounded bg-black px-3 py-1 text-white">{playing ? "Pause" : "Play"}</button>
         <button disabled={!ready} onClick={() => jump(index + 1)} className="rounded border px-2 py-1">Next ▶</button>
         <button disabled={!ready} onClick={() => jump(0)} className="rounded border px-2 py-1">Restart</button>
         <label className="ml-auto">Speed{" "}
