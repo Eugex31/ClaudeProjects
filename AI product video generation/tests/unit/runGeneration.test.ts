@@ -43,4 +43,16 @@ describe("runGeneration", () => {
     expect(d.saveSteps).toHaveBeenCalledWith(r.steps);
     expect(d.incrementUsage).toHaveBeenCalledTimes(1);
   });
+  test("save failure: 500, usage not incremented", async () => {
+    const d = deps();
+    d.saveSteps.mockRejectedValue(new Error("db"));
+    expect((await runGeneration(ctx, d)).status).toBe(500);
+    expect(d.incrementUsage).not.toHaveBeenCalled();
+  });
+  test("AI returns no steps: 502, nothing saved or charged", async () => {
+    const d = deps(vi.fn().mockResolvedValue([]));
+    expect((await runGeneration(ctx, d)).status).toBe(502);
+    expect(d.saveSteps).not.toHaveBeenCalled();
+    expect(d.incrementUsage).not.toHaveBeenCalled();
+  });
 });

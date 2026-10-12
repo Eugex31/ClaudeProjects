@@ -8,7 +8,11 @@ const fake = (response: object) =>
 
 test("returns parsed steps", async () => {
   const steps = [{ title: "T", narration: "", parts: [], from: "above", camera: "iso", warning: "" }];
-  await expect(generateSteps(input, fake({ stop_reason: "end_turn", parsed_output: { steps } }))).resolves.toEqual(steps);
+  const client = fake({ stop_reason: "end_turn", parsed_output: { steps } });
+  await expect(generateSteps(input, client)).resolves.toEqual(steps);
+  const arg = (client.messages.parse as ReturnType<typeof vi.fn>).mock.calls[0][0];
+  expect(arg).not.toHaveProperty("tool_choice");
+  expect(arg.output_config.format).toBeDefined();
 });
 test("refusal becomes a 422 GenerationError", async () => {
   const err = await generateSteps(input, fake({ stop_reason: "refusal", parsed_output: null })).catch((e) => e);

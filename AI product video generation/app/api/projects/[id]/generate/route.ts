@@ -24,13 +24,16 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       supabase.from("usage").select("generations").eq("org_id", project.org_id).eq("period", period).maybeSingle(),
       supabase.from("storyboards").select("parts, manual_text").eq("project_id", id).single(),
     ]);
+    if (!membership) return NextResponse.json({ error: "You are not a member of this workspace." }, { status: 403 });
+    if (!sb) return NextResponse.json({ error: "Storyboard not found." }, { status: 404 });
+    const org = Array.isArray(project.organizations) ? project.organizations[0] : project.organizations;
     ctx = {
-      role: membership!.role,
-      quota: (project.organizations as any).monthly_generation_quota,
+      role: membership.role,
+      quota: org?.monthly_generation_quota ?? 0,
       used: usage?.generations ?? 0,
       language: project.language,
-      parts: sb?.parts ?? [],
-      manualText: sb?.manual_text ?? "",
+      parts: sb.parts ?? [],
+      manualText: sb.manual_text ?? "",
       aiConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
     };
   }
@@ -38,8 +41,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   const result = await runGeneration(ctx, {
     generate: (input) => generateSteps(input),
     saveSteps: async (steps) => {
-      const { error } = await supabase.from("storyboards").update({ steps }).eq("project_id", id);
-      if (error) throw error;
+      const { data, error } = await supabase.from("storyboards").update({ steps }).eq("project_id", id).select("project_id");
+      if (error || !data || data.length === 0) throw error ?? new Error("Storyboard could not be saved");
     },
     incrementUsage: async () => {
       const { error } = await createAdminClient().rpc("increment_usage", { target_org: project!.org_id, target_period: period });

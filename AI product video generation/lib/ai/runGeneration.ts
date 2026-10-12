@@ -33,7 +33,15 @@ export async function runGeneration(ctx: GenerationContext | null, deps: Generat
     return { status: 502, error: "The AI service failed. Please try again." };
   }
   const { steps, issues } = validateStoryboard(raw, ctx.parts);
-  await deps.saveSteps(steps);
+  if (steps.length === 0) {
+    return { status: 502, error: "The AI returned no steps. Try again or build the storyboard manually." };
+  }
+  try {
+    await deps.saveSteps(steps);
+  } catch (err) {
+    console.error("saving storyboard failed", err);
+    return { status: 500, error: "Could not save the storyboard." };
+  }
   await deps.incrementUsage();
   return { status: 200, steps, issues };
 }
