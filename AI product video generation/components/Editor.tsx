@@ -1,6 +1,5 @@
 "use client";
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { validateStoryboard } from "@/lib/storyboard/validate";
 import { addStep, moveStep, removeStep, togglePart } from "@/lib/storyboard/edit";
@@ -8,6 +7,7 @@ import { CAMERA_PRESETS, DIRECTIONS, LIMITS, type Issue, type Language, type Par
 import { canEdit, type Role } from "@/lib/roles";
 import { EditorViewport } from "./EditorViewport";
 import { Player } from "./Player";
+import { useDeleteProject } from "./useDeleteProject";
 
 export type EditorProject = { id: string; name: string; language: Language; status: "draft" | "approved"; share_token: string | null; org_id: string };
 
@@ -15,8 +15,8 @@ export function Editor(props: {
   project: EditorProject; role: Role; parts: PartManifest; steps: Step[]; manualText: string; modelUrl: string;
   toolbarExtras?: (ctx: { approved: boolean; steps: Step[]; parts: PartManifest; project: EditorProject }) => React.ReactNode;
 }) {
-  const router = useRouter();
   const [supabase] = useState(() => createBrowserSupabase());
+  const deleteWithFiles = useDeleteProject(supabase, props.project);
   const editable = canEdit(props.role);
   const [steps, setSteps] = useState(props.steps);
   const [parts, setParts] = useState(props.parts);
@@ -86,22 +86,12 @@ export function Editor(props: {
   }
 
   async function deleteProject() {
-    if (!confirm(`Delete "${props.project.name}" and all its files? This cannot be undone.`)) return;
     if (busy) return;
     setBusy("Deleting…");
-    const { data: assets } = await supabase.from("assets").select("storage_path").eq("project_id", props.project.id);
-    const paths = (assets ?? []).map((a) => a.storage_path).filter((p) => !p.startsWith("sample:"));
-    const { data: deleted, error } = await supabase.from("projects").delete().eq("id", props.project.id).select("id");
-    if (error || !deleted || deleted.length === 0) {
-      setBusy(null);
-      return setMessage(error ? error.message : "You don't have permission to delete this project.");
-    }
-    if (paths.length) {
-      const { error: rmError } = await supabase.storage.from("org-files").remove(paths);
-      if (rmError) alert("Project deleted, but some files could not be removed.");
-    }
-    router.push("/app");
-    router.refresh();
+    const outcome = await deleteWithFiles();
+    if (outcome.kind === "deleted") return;
+    setBusy(null);
+    if (outcome.kind === "error") setMessage(outcome.message);
   }
 
   const approved = status === "approved" && !dirty;

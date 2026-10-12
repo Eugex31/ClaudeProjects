@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 import { extractManifest } from "@/lib/three/manifest";
 import { loadGlb } from "@/lib/three/loadGlb";
+import { deleteProjectAndFiles } from "@/lib/data/deleteProject";
 import { LANGUAGES } from "@/lib/storyboard/types";
 import { MAX_MODEL_BYTES, MAX_PASTED_CHARS, MAX_PDF_BYTES, assetPath, normalizeManualText } from "@/lib/manual";
 
@@ -40,15 +41,20 @@ export function NewProjectForm({ orgId }: { orgId: string }) {
       setStatus("Creating project…");
       const { data: project, error } = await supabase.from("projects").insert({ org_id: orgId, name, language }).select().single();
       if (error) throw error;
-      const { error: sbErr } = await supabase.from("storyboards").insert({
-        project_id: project.id, org_id: orgId, parts, steps: [], manual_text: normalizeManualText(pasted),
-      });
-      if (sbErr) throw sbErr;
-
       try {
+        const { error: sbErr } = await supabase.from("storyboards").insert({
+          project_id: project.id, org_id: orgId, parts, steps: [], manual_text: normalizeManualText(pasted),
+        });
+        if (sbErr) throw sbErr;
         setStatus("Uploading model…");
         await uploadAsset(project.id, "model", model);
+      } catch (err) {
+        // Never leave a model-less project behind: roll back (best effort) and stay on the form.
+        await deleteProjectAndFiles(supabase, project.id).catch(() => undefined);
+        throw err;
+      }
 
+      try {
         if (hasPdf) {
           setStatus("Uploading and reading manual…");
           const assetId = await uploadAsset(project.id, "manual", pdf);
@@ -61,7 +67,7 @@ export function NewProjectForm({ orgId }: { orgId: string }) {
           }
         }
       } catch (err) {
-        alert(`${err instanceof Error ? err.message : "An upload failed."} The project was created; finish setup in the editor.`);
+        alert(`${err instanceof Error ? err.message : "The manual upload failed."} The project was created; paste the manual text in the editor.`);
       }
       router.push(`/app/projects/${project.id}`);
     } catch (err) {
@@ -78,7 +84,10 @@ export function NewProjectForm({ orgId }: { orgId: string }) {
     const { error: aErr } = await supabase.from("assets").insert({
       id: assetId, org_id: orgId, project_id: projectId, kind, storage_path: path, filename: file.name, size_bytes: file.size,
     });
-    if (aErr) throw aErr;
+    if (aErr) {
+      await supabase.storage.from("org-files").remove([path]).catch(() => undefined);
+      throw aErr;
+    }
     return assetId;
   }
 

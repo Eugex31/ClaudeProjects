@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { modelUrlFor, newestModel } from "@/lib/data/assets";
 import { ProjectEditor } from "@/components/ProjectEditor";
+import { MissingModel } from "@/components/MissingModel";
+import { canEdit } from "@/lib/roles";
 
 export default async function ProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -17,8 +19,8 @@ export default async function ProjectPage({ params }: { params: Promise<{ id: st
   if (!membership) notFound();
   const sb = Array.isArray(project.storyboards) ? project.storyboards[0] : project.storyboards;
   const model = newestModel(project.assets);
-  if (!model) return <p>This project has no model. Delete it and create it again.</p>;
-  const modelUrl = await modelUrlFor(supabase, model.storage_path);
+  const modelUrl = model ? await modelUrlFor(supabase, model.storage_path).catch(() => null) : null;
+  if (!modelUrl) return <MissingModel project={{ id: project.id, name: project.name }} editable={canEdit(membership.role)} />;
   return (
     <ProjectEditor
       project={{ id: project.id, name: project.name, language: project.language, status: project.status, share_token: project.share_token, org_id: project.org_id }}
