@@ -1,16 +1,19 @@
 "use client";
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/client";
-import { safeNext } from "@/lib/safeNext";
+import { authHref, safeNext } from "@/lib/safeNext";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const params = useSearchParams();
+  // ?error= comes from the auth callback; rendered as plain text (React escapes it).
+  const [message, setMessage] = useState<string | null>(params.get("error")?.slice(0, 300) || null);
   const [busy, setBusy] = useState(false);
   const router = useRouter();
-  const next = safeNext(useSearchParams().get("next"));
+  const next = safeNext(params.get("next"));
   const supabase = createBrowserSupabase();
   const getRedirectTo = () => `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`;
 
@@ -47,6 +50,11 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
         <button type="button" onClick={magicLink} disabled={!email} className="text-sm underline disabled:opacity-50">Email me a magic link instead</button>
       )}
       {message && <p role="status" className="text-sm">{message}</p>}
+      <p className="mt-4 text-center text-sm">
+        {mode === "login"
+          ? <>No account? <Link className="underline" href={authHref("/signup", next)}>Sign up</Link></>
+          : <>Already have an account? <Link className="underline" href={authHref("/login", next)}>Sign in</Link></>}
+      </p>
     </form>
   );
 }

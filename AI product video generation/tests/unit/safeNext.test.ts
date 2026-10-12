@@ -17,3 +17,10 @@ describe("safeNext", () => {
     expect(safeNext("//x", "/home")).toBe("/home");
   });
 });
+
+import { authHref } from "@/lib/safeNext";
+describe("authHref", () => {
+  it("omits the default destination", () => expect(authHref("/signup", "/app")).toBe("/signup"));
+  it("carries a safe next", () => expect(authHref("/login", "/app/projects/1?x=1")).toBe("/login?next=%2Fapp%2Fprojects%2F1%3Fx%3D1"));
+  it("drops unsafe next", () => expect(authHref("/login", "//evil.com")).toBe("/login"));
+});

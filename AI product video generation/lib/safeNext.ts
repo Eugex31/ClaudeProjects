@@ -12,3 +12,9 @@ export function safeNext(next: string | null | undefined, fallback = "/app"): st
   }
   return next;
 }
+
+/** Link to another auth page that keeps a safe `next` (omitted when it is the default). */
+export function authHref(path: "/login" | "/signup", next: string | null | undefined): string {
+  const target = safeNext(next);
+  return target === "/app" ? path : `${path}?next=${encodeURIComponent(target)}`;
+}

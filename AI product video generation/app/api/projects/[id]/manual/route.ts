@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { extractText, getDocumentProxy } from "unpdf";
 import { createClient } from "@/lib/supabase/server";
-import { normalizeManualText } from "@/lib/manual";
+import { MAX_PDF_BYTES, normalizeManualText } from "@/lib/manual";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -21,6 +21,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { data: file, error } = await supabase.storage.from("org-files").download(asset.storage_path);
   if (error || !file) return NextResponse.json({ error: "Could not read the PDF" }, { status: 404 });
+  // The client checks size too, but only the stored object is authoritative.
+  if (file.size > MAX_PDF_BYTES) {
+    return NextResponse.json({ error: "PDF is larger than 20 MB. Paste the manual text instead." }, { status: 413 });
+  }
 
   let text: string;
   try {
