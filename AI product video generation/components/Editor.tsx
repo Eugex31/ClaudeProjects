@@ -13,6 +13,8 @@ export type EditorProject = { id: string; name: string; language: Language; stat
 
 export function Editor(props: {
   project: EditorProject; role: Role; parts: PartManifest; steps: Step[]; manualText: string; modelUrl: string;
+  /** storyboards.updated_at of the version loaded; approval is only accepted for this exact version. */
+  storyboardUpdatedAt: string;
   toolbarExtras?: (ctx: { approved: boolean; steps: Step[]; parts: PartManifest; project: EditorProject }) => React.ReactNode;
 }) {
   const [supabase] = useState(() => createBrowserSupabase());
@@ -22,6 +24,7 @@ export function Editor(props: {
   const [parts, setParts] = useState(props.parts);
   const [manualText, setManualText] = useState(props.manualText);
   const [status, setStatus] = useState(props.project.status);
+  const [version, setVersion] = useState(props.storyboardUpdatedAt);
   const [selected, setSelected] = useState(0);
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
@@ -44,10 +47,11 @@ export function Editor(props: {
     setBusy("Saving…");
     const { steps: clean } = validateStoryboard(steps, parts);
     const { data, error } = await supabase.from("storyboards")
-      .update({ steps: clean, parts, manual_text: manualText }).eq("project_id", props.project.id).select("project_id");
+      .update({ steps: clean, parts, manual_text: manualText }).eq("project_id", props.project.id).select("project_id, updated_at");
     setBusy(null);
     if (error) { setMessage(error.message); return false; }
     if (!data || data.length === 0) { setMessage("You don't have permission to edit this project."); return false; }
+    setVersion(data[0].updated_at);
     setSteps(clean);
     setSelected((s) => Math.min(s, Math.max(0, clean.length - 1)));
     setDirty(false);
@@ -69,6 +73,8 @@ export function Editor(props: {
       setSelected(0);
       setDirty(false);
       setMessage("AI draft ready. Review every step before approving.");
+      const { data: sb } = await supabase.from("storyboards").select("updated_at").eq("project_id", props.project.id).single();
+      if (sb) setVersion(sb.updated_at);
       await refreshStatus();
     } catch {
       setMessage("Generation failed. Check your connection and try again.");
@@ -78,10 +84,11 @@ export function Editor(props: {
   }
 
   async function approve() {
-    const { data, error } = await supabase.from("projects").update({ status: "approved" }).eq("id", props.project.id).select("status");
-    if (error) return setMessage(error.message);
-    if (!data || data.length === 0) return setMessage("You don't have permission to approve this project.");
-    setStatus(data[0].status);
+    setBusy("Approving…");
+    const { data, error } = await supabase.rpc("approve_project", { p_project: props.project.id, p_storyboard_updated_at: version });
+    setBusy(null);
+    if (error) return setMessage(error.message === "Not permitted" ? "You don't have permission to approve this project." : error.message);
+    setStatus(data);
     setMessage("Approved. You can now record and share the video.");
   }
 

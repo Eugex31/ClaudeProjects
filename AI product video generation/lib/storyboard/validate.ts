@@ -58,3 +58,16 @@ export function validateStoryboard(raw: unknown[], manifest: PartManifest): { st
   }
   return { steps, issues };
 }
+
+const isVec3 = (v: unknown): v is [number, number, number] =>
+  Array.isArray(v) && v.length === 3 && v.every((n) => typeof n === "number" && Number.isFinite(n));
+
+/** Make a stored storyboard (untrusted jsonb) safe to render: well-formed parts, validated steps. */
+export function cleanStoredStoryboard(sb: { parts?: unknown; steps?: unknown } | null | undefined): { parts: PartManifest; steps: Step[] } {
+  const parts: PartManifest = (Array.isArray(sb?.parts) ? sb.parts : []).filter(
+    (p): p is PartManifest[number] =>
+      !!p && typeof p === "object" && typeof p.id === "string" && typeof p.label === "string" && isVec3(p.size) && isVec3(p.center),
+  );
+  const steps = validateStoryboard(Array.isArray(sb?.steps) ? sb.steps : [], parts).steps;
+  return { parts, steps };
+}

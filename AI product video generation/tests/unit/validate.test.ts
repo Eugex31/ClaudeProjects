@@ -70,3 +70,19 @@ describe("validateStoryboard", () => {
     expect(new Set(steps.map((s) => s.id)).size).toBe(2);
   });
 });
+
+import { cleanStoredStoryboard } from "@/lib/storyboard/validate";
+describe("cleanStoredStoryboard", () => {
+  test("survives non-array jsonb", () => {
+    expect(cleanStoredStoryboard({ steps: "oops", parts: { a: 1 } })).toEqual({ steps: [], parts: [] });
+    expect(cleanStoredStoryboard(undefined)).toEqual({ steps: [], parts: [] });
+  });
+  test("drops malformed parts and cleans steps against the remaining ones", () => {
+    const r = cleanStoredStoryboard({
+      parts: [manifest[0], { id: 5 }, { id: "x", label: "x", size: [1, 1], center: [0, 0, 0] }, null],
+      steps: [{ id: "s", title: 42, parts: ["side_left", "x"], from: "sideways", camera: "iso" }, "junk"],
+    });
+    expect(r.parts).toEqual([manifest[0]]);
+    expect(r.steps).toEqual([{ id: "s", title: "Step 1", narration: "", parts: ["side_left"], from: "above", camera: "iso" }]);
+  });
+});

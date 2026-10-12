@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, test } from "vitest";
 import { createClient } from "@supabase/supabase-js";
-import { admin, localEnv, makeUser } from "./helpers";
+import { admin, approveCurrent, localEnv, makeUser } from "./helpers";
 
 const run = Date.now();
 let a: Awaited<ReturnType<typeof makeUser>>;
@@ -71,7 +71,8 @@ describe("tenant isolation", () => {
 
 describe("approval workflow", () => {
   test("approve stamps approver; editing steps resets to draft", async () => {
-    const { data: ok } = await b.client.from("projects").update({ status: "approved" }).eq("id", projectB).select().single();
+    expect((await approveCurrent(b.client, projectB)).data).toBe("approved");
+    const { data: ok } = await b.client.from("projects").select("approved_by").eq("id", projectB).single();
     expect(ok!.approved_by).toBe(b.userId);
     await b.client.from("storyboards").update({ steps: [{ id: "s2" }] }).eq("project_id", projectB);
     const { data } = await b.client.from("projects").select("status, approved_by").eq("id", projectB).single();
@@ -81,7 +82,7 @@ describe("approval workflow", () => {
   test("cannot approve with zero steps", async () => {
     const { data: p } = await b.client.from("projects").insert({ org_id: b.orgId, name: "empty" }).select().single();
     await b.client.from("storyboards").insert({ project_id: p!.id, org_id: b.orgId });
-    const { error } = await b.client.from("projects").update({ status: "approved" }).eq("id", p!.id);
+    const { error } = await approveCurrent(b.client, p!.id);
     expect(error?.message).toMatch(/no steps/);
   });
 });

@@ -1,5 +1,5 @@
 import { beforeAll, expect, test } from "vitest";
-import { admin, makeUser } from "./helpers";
+import { admin, approveCurrent, makeUser } from "./helpers";
 import { loadSharedProject } from "@/lib/data/share";
 
 const run = Date.now();
@@ -22,7 +22,7 @@ test("draft project is not shared", async () => {
 });
 
 test("approved project is shared with only player data", async () => {
-  await client.from("projects").update({ status: "approved" }).eq("id", projectId);
+  expect((await approveCurrent(client, projectId)).error).toBeNull();
   const shared = await loadSharedProject(token, admin());
   expect(shared).toMatchObject({ name: "Shared", language: "en", modelUrl: "/sample/bookshelf.glb" });
   expect(Object.keys(shared!).sort()).toEqual(["language", "modelUrl", "name", "parts", "steps"]);

@@ -18,7 +18,9 @@ returns uuid language sql immutable set search_path = '' as $$
               then split_part(object_name, '/', 1)::uuid end;
 $$;
 
--- anon never needs direct table access (share page uses the service role)
+-- anon never needs direct table access (share page uses the service role).
+-- NOTE: this only covers tables that exist now. Any table added by a later migration
+-- must `revoke all on public.<table> from anon;` itself (and enable RLS).
 revoke all on all tables in schema public from anon;
 
 alter table public.organizations enable row level security;
@@ -59,7 +61,8 @@ create policy proj_delete on public.projects for delete using (public.is_member(
 revoke insert on public.projects from anon, authenticated;
 grant insert (org_id, name, language) on public.projects to authenticated;
 revoke update on public.projects from authenticated;
-grant update (name, language, status, share_token, updated_at) on public.projects to authenticated;
+-- status is not client-writable: approval goes through approve_project(); triggers reset to draft.
+grant update (name, language, share_token, updated_at) on public.projects to authenticated;
 
 -- assets
 create policy asset_select on public.assets for select using (public.is_member(org_id, 'viewer'));
@@ -128,6 +131,44 @@ end $$;
 create trigger storyboards_reset_approval_insert before insert on public.storyboards
   for each row execute function public.reset_approval_on_insert();
 
+-- Approve exactly the storyboard version the reviewer saw. The storyboard row is locked so a
+-- concurrent save either lands before (version mismatch -> error) or after (trigger resets to draft).
+create or replace function public.approve_project(p_project uuid, p_storyboard_updated_at timestamptz)
+returns text language plpgsql security definer set search_path = '' as $$
+declare
+  v_org uuid;
+  v_updated timestamptz;
+  v_status text;
+begin
+  select p.org_id into v_org from public.projects p where p.id = p_project;
+  if v_org is null or not public.is_member(v_org, 'editor') then
+    raise exception 'Not permitted';
+  end if;
+  select s.updated_at into v_updated from public.storyboards s where s.project_id = p_project for update;
+  if v_updated is null or v_updated is distinct from p_storyboard_updated_at then
+    raise exception 'The storyboard changed since you loaded it. Reload to review the latest version.';
+  end if;
+  -- stamp_approval records auth.uid() as approver and rejects storyboards with no steps
+  update public.projects set status = 'approved' where id = p_project returning status into v_status;
+  return v_status;
+end $$;
+revoke execute on function public.approve_project(uuid, timestamptz) from public, anon;
+grant execute on function public.approve_project(uuid, timestamptz) to authenticated;
+
+-- A new or removed model invalidates any approval (the reviewed geometry changed).
+create or replace function public.reset_approval_on_model_change()
+returns trigger language plpgsql security definer set search_path = '' as $$
+declare r record;
+begin
+  if tg_op = 'DELETE' then r := old; else r := new; end if;
+  if r.kind = 'model' then
+    update public.projects set status = 'draft' where id = r.project_id and status = 'approved';
+  end if;
+  return null;
+end $$;
+create trigger assets_reset_approval after insert or delete on public.assets
+  for each row execute function public.reset_approval_on_model_change();
+
 -- invites
 create or replace function public.accept_invite(invite_token text)
 returns uuid language plpgsql security definer set search_path = '' as $$
@@ -137,6 +178,9 @@ begin
   select * into inv from public.invites
    where token = invite_token and accepted_at is null and expires_at > now();
   if inv.id is null then raise exception 'Invite is invalid or expired'; end if;
+  if not exists (select 1 from auth.users u where u.id = auth.uid() and u.email_confirmed_at is not null) then
+    raise exception 'Confirm your email address before accepting an invite';
+  end if;
   if lower(inv.email) is distinct from lower((select email from auth.users where id = auth.uid())) then
     raise exception 'This invite was sent to a different email address';
   end if;
@@ -147,6 +191,19 @@ begin
 end $$;
 revoke execute on function public.accept_invite(text) from public, anon;
 grant execute on function public.accept_invite(text) to authenticated;
+
+-- member list with emails (auth.users is not exposed); empty for non-members
+create or replace function public.org_members(target_org uuid)
+returns table (user_id uuid, email text, role public.member_role)
+language sql stable security definer set search_path = '' as $$
+  select m.user_id, u.email::text, m.role
+    from public.memberships m
+    join auth.users u on u.id = m.user_id
+   where m.org_id = target_org and public.is_member(target_org, 'viewer')
+   order by m.created_at;
+$$;
+revoke execute on function public.org_members(uuid) from public, anon;
+grant execute on function public.org_members(uuid) to authenticated;
 
 -- usage increment (service role only)
 create or replace function public.increment_usage(target_org uuid, target_period text)
@@ -160,3 +217,4 @@ revoke execute on function public.increment_usage(uuid, text) from public, anon,
 revoke execute on function public.stamp_approval() from public, anon, authenticated;
 revoke execute on function public.reset_approval_on_edit() from public, anon, authenticated;
 revoke execute on function public.reset_approval_on_insert() from public, anon, authenticated;
+revoke execute on function public.reset_approval_on_model_change() from public, anon, authenticated;

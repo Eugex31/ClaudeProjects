@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isScopedModelPath, modelUrlFor, newestModel } from "./assets";
 import type { Language, PartManifest, Step } from "@/lib/storyboard/types";
+import { cleanStoredStoryboard } from "@/lib/storyboard/validate";
 
 export type SharedProject = { name: string; language: Language; parts: PartManifest; steps: Step[]; modelUrl: string };
 
@@ -18,5 +19,6 @@ export async function loadSharedProject(token: string, admin: SupabaseClient = c
   const model = newestModel(data.assets as { kind: string; storage_path: string; created_at: string }[]);
   if (!sb || !model) return null;
   if (!isScopedModelPath(model.storage_path, data.org_id, data.id)) return null;
-  return { name: data.name, language: data.language, parts: sb.parts, steps: sb.steps, modelUrl: await modelUrlFor(admin, model.storage_path) };
+  const { parts, steps } = cleanStoredStoryboard(sb);
+  return { name: data.name, language: data.language, parts, steps, modelUrl: await modelUrlFor(admin, model.storage_path) };
 }
