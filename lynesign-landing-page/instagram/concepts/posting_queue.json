@@ -213,12 +213,7 @@
   {"slug": "autorepair4", "status": "posted", "permalink": "https://www.instagram.com/p/DfNfMOknQRu/"},
   {"slug": "spa", "status": "posted", "permalink": "https://www.instagram.com/p/DfP3H5yiXtG/"},
   {"slug": "taqueria", "status": "posted", "permalink": "https://www.instagram.com/p/DfSoJaZnd-2/"},
-  {
-    "slug": "clinic",
-    "status": "pending",
-    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/clinic.png",
-    "caption": "Trusted Spaces Build Trusted Brands.\n\nAdvertising where people feel at ease lends credibility to your name. Put your brand in places Houston already trusts.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #IndoorAdvertising #HoustonBusiness #DigitalSignage #LocalMarketing"
-  },
+  {"slug": "clinic", "status": "posted", "permalink": "https://www.instagram.com/p/DfVQQe8nQSq/"},
   {
     "slug": "cafe2",
     "status": "pending",
