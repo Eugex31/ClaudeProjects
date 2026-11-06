@@ -214,10 +214,5 @@
   {"slug": "spa", "status": "posted", "permalink": "https://www.instagram.com/p/DfP3H5yiXtG/"},
   {"slug": "taqueria", "status": "posted", "permalink": "https://www.instagram.com/p/DfSoJaZnd-2/"},
   {"slug": "clinic", "status": "posted", "permalink": "https://www.instagram.com/p/DfVQQe8nQSq/"},
-  {
-    "slug": "cafe2",
-    "status": "pending",
-    "image_url": "https://raw.githubusercontent.com/Eugex31/ClaudeProjects/main/lynesign-landing-page/instagram/concepts/cafe2.png",
-    "caption": "No Scrolling Past. No Swiping Away.\n\nUnlike a social feed, an indoor screen cannot be skipped, muted or closed. Your message gets its full moment.\n\nlynesign.com/landing\n\n☆ 📍 Houston, Tx\n\n#LyneSign #IndoorAdvertising #HoustonBusiness #DigitalSignage #LocalMarketing"
-  }
+  {"slug": "cafe2", "status": "posted", "permalink": "https://www.instagram.com/p/DfaST2ZCbx5/"}
 ]
